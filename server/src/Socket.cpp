@@ -81,6 +81,10 @@ int ServerSocket::send(char *buffer, int bufferSize){
 		return -1;
 	}
 
+	if (bufferSize == 1)
+		return 	0;
+	
+
 	// calls send from global namespace
 	return ::send(clientSocket, buffer, bufferSize, 0);
 }
@@ -139,6 +143,10 @@ int ClientSocket::send(char *buffer, int bufferSize){
 	if(hasError || !isConnected){
 		return -1;
 	}
+
+	if (bufferSize == 1)
+		return 	0;
+	
 
 	// calls send from global namespace
 	return ::send(serverSocket, buffer, bufferSize, 0);

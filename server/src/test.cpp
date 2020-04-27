@@ -1,6 +1,8 @@
 #include "Socket.hpp"
 #include <iostream>
 #include <string>
+#include <string.h>
+
 
 #define PORT 54000
 
@@ -23,10 +25,12 @@ int main(){
 		}
 
 		// Display message
-		std::cout << "Received: " << std::string(buffer, 0, bytesRecv) << std::endl;
-
+		std::cout << "Received from client: " << std::string(buffer, 0, bytesRecv) << std::endl;
+		buffer[0] = '\0';
+		std::cin.getline(buffer,4096);
 		// Resend message
-		server.send(buffer, bytesRecv + 1);
+		server.send(buffer, strlen(buffer) + 1);
+		buffer[0] = '\0';
 	}
 
 	return 0;
