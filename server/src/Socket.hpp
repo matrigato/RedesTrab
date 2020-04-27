@@ -13,4 +13,17 @@ class ServerSocket{
 		int send(char *buffer, int bufferSize);
 };
 
+class ClientSocket{
+	private:
+		bool hasError;
+		bool isConnected;
+		int serverSocket;
+	
+	public:
+	ClientSocket(unsigned short int port, char* serverName);
+	~ClientSocket();
+	int receive(char *buffer, int bufferSize);
+	int send(char *buffer, int bufferSize);
+};
+
 #endif
