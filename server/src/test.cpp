@@ -4,7 +4,7 @@
 #include <string.h>
 
 
-#define PORT 54000
+#define PORT 54001
 
 int main(){
 	ServerSocket server(PORT);
@@ -26,11 +26,17 @@ int main(){
 
 		// Display message
 		std::cout << "Received from client: " << std::string(buffer, 0, bytesRecv) << std::endl;
-		buffer[0] = '\0';
+		bzero(buffer, 4096);
 		std::cin.getline(buffer,4096);
+		//quit command
+		if (strcmp(buffer,"/quit")==0)
+        {
+            server.closeSocket();
+            return 0;
+        }
 		// Resend message
 		server.send(buffer, strlen(buffer) + 1);
-		buffer[0] = '\0';
+		bzero(buffer, 4096);
 	}
 
 	return 0;

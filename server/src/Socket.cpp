@@ -89,6 +89,13 @@ int ServerSocket::send(char *buffer, int bufferSize){
 	return ::send(clientSocket, buffer, bufferSize, 0);
 }
 
+void ServerSocket::closeSocket(){
+	if(!isConnected)
+		return;
+	close(clientSocket);
+	isConnected = false;
+}
+
 ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 	
 	struct sockaddr_in serv_addr;//server address	
@@ -150,4 +157,11 @@ int ClientSocket::send(char *buffer, int bufferSize){
 
 	// calls send from global namespace
 	return ::send(serverSocket, buffer, bufferSize, 0);
+}
+
+void ClientSocket::closeSocket(){
+	if(!isConnected)
+		return;
+	close(serverSocket);
+	isConnected = false;
 }

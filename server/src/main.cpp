@@ -7,7 +7,6 @@
 
 void server_rotine(){
 	ServerSocket server(PORT);
-
 	char buffer[4096];
 
 	while(true){
@@ -25,22 +24,29 @@ void server_rotine(){
 
 		// Display message
 		std::cout << "Received from client: " << std::string(buffer, 0, bytesRecv) << std::endl;
-		buffer[0] = '\0';
+		bzero(buffer, 4096);
 		std::cin.getline(buffer,4096);
+
+		//quit command
+		if (strcmp(buffer,"/quit")==0)
+        {
+            server.closeSocket();
+            return;
+        }
 		// Resend message
 		server.send(buffer, strlen(buffer) + 1);
-		buffer[0] = '\0';
+		bzero(buffer, 4096);
 	}
 }
 
 void client_rotine(){
-	char serverName[] = "vini-pc";//colocar aqui o nome do computar para identificar ele como servidor
+	char serverName[] = "vini-pc";
     char initMessage[] = "client is tring to say something to the server\0";
 	ClientSocket client(PORT, serverName);
 	char buffer[4096];
 
     if(client.send(initMessage, sizeof(initMessage)) == -1)
-        std::cout << "erro na conexão" << std::endl;
+        std::cout << "erro" << std::endl;
 
 	while(true){
 		//receive message
@@ -57,12 +63,20 @@ void client_rotine(){
 
 		// Display message
 		std::cout << "Received form Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
-        buffer[0] = '\0';
+        bzero(buffer, 4096);
 
 		std::cin.getline(buffer,4096);
+
+		//quit command
+		if (strcmp(buffer,"/quit")==0)
+        {
+            client.closeSocket();
+            return;
+        }
+
 		// Resend message
 		client.send(buffer, strlen(buffer)+1);
-        buffer[0] = '\0';
+        bzero(buffer, 4096);
 	}
 }
 

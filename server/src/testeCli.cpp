@@ -3,7 +3,7 @@
 #include <string>
 #include <string.h>
 
-#define PORT 54000
+#define PORT 54001
 
 int main(){
     char serverName[] = "vini-pc";
@@ -27,14 +27,22 @@ int main(){
 			break;
 		}
 
+        
+
 		// Display message
 		std::cout << "Received form Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
-        buffer[0] = '\0';
+        bzero(buffer, 4096);
 
 		std::cin.getline(buffer,4096);
+        if (strcmp(buffer,"/sair")==0)
+        {
+            client.closeSocket();
+            return 0;
+        }
+        
 		// Resend message
 		client.send(buffer, strlen(buffer)+1);
-        buffer[0] = '\0';
+        bzero(buffer, 4096);
 	}
 
 	return 0;

@@ -11,6 +11,7 @@ class ServerSocket{
 		~ServerSocket();
 		int receive(char *buffer, int bufferSize);
 		int send(char *buffer, int bufferSize);
+		void closeSocket();
 };
 
 class ClientSocket{
@@ -24,6 +25,7 @@ class ClientSocket{
 	~ClientSocket();
 	int receive(char *buffer, int bufferSize);
 	int send(char *buffer, int bufferSize);
+	void closeSocket();
 };
 
 #endif
