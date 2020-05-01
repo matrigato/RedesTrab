@@ -2,82 +2,34 @@
 #include <iostream>
 #include <string>
 #include <string.h>
+#include <thread>
 
-#define PORT 54000
+#define PORT 54002
 
 void server_rotine(){
 	ServerSocket server(PORT);
-	char buffer[4096];
+	server.wathsMyName();
 
-	while(true){
-		//receive message
-		int bytesRecv = server.receive(buffer, 4096);
+	std::thread t1(&ServerSocket::readM,&server);
+	std::thread t2(&ServerSocket::sendM,&server);
 
-		if(bytesRecv == -1){
-			std::cerr << "There was a connection issue" << std::endl;
-			break;
-		}
-		if(bytesRecv == 0){
-			std::cout << "The client disconnected" << std::endl;
-			break;
-		}
-
-		// Display message
-		std::cout << "Received from client: " << std::string(buffer, 0, bytesRecv) << std::endl;
-		bzero(buffer, 4096);
-		std::cin.getline(buffer,4096);
-
-		//quit command
-		if (strcmp(buffer,"/quit")==0)
-        {
-            server.closeSocket();
-            return;
-        }
-		// Resend message
-		server.send(buffer, strlen(buffer) + 1);
-		bzero(buffer, 4096);
-	}
+	t1.join();
+	t2.join();
 }
 
 void client_rotine(){
 	char serverName[] = "vini-pc";
-    char initMessage[] = "client is tring to say something to the server\0";
+	char initMessage[] = "client is tring to say something to the server";
 	ClientSocket client(PORT, serverName);
-	char buffer[4096];
+	
+	if(client.send(initMessage, sizeof(initMessage)) == -1)
+	    std::cout << "erro" << std::endl;
 
-    if(client.send(initMessage, sizeof(initMessage)) == -1)
-        std::cout << "erro" << std::endl;
+	std:: thread t1(&ClientSocket::readM, &client);
+	std:: thread t2(&ClientSocket::sendM, &client);
 
-	while(true){
-		//receive message
-		int bytesRecv = client.receive(buffer, 4096);
-
-		if(bytesRecv == -1){
-			std::cerr << "There was a connection issue" << std::endl;
-			break;
-		}
-		if(bytesRecv == 0){
-			std::cout << "The server disconnected" << std::endl;
-			break;
-		}
-
-		// Display message
-		std::cout << "Received form Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
-        bzero(buffer, 4096);
-
-		std::cin.getline(buffer,4096);
-
-		//quit command
-		if (strcmp(buffer,"/quit")==0)
-        {
-            client.closeSocket();
-            return;
-        }
-
-		// Resend message
-		client.send(buffer, strlen(buffer)+1);
-        bzero(buffer, 4096);
-	}
+	t1.join();
+	t2.join();
 }
 
 void menu(){
@@ -91,18 +43,28 @@ int main(){
 
 	menu();
 	int select;
-	std:: cin >> select;
-	switch (select)
+	std::cin >> select;
+	//ignore \n
+	std::cin.ignore();
+
+	while (select > 3 || select < 1)
 	{
-		case 1:
-			server_rotine();
-			break;
-		case 2:
-			client_rotine();
-			break;
-		case 3:
-			std::cout << "saindo...";
-			break;	
-		return 0;
+		switch (select)
+		{
+			case 1:
+				server_rotine();
+				break;
+			case 2:
+				client_rotine();
+				break;
+			case 3:
+				std::cout << "saindo...";
+				break;	
+			default:
+				std::cout << "entrada invalida" << std::endl;
+				menu();
+				break;
+		}
 	}
+	return 0;
 }

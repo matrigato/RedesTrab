@@ -5,6 +5,8 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <netdb.h> 
+#include <iostream>
+#include <thread>
 
 ServerSocket::ServerSocket(unsigned short int port){
 	hasError = false;
@@ -96,6 +98,57 @@ void ServerSocket::closeSocket(){
 	isConnected = false;
 }
 
+void ServerSocket::wathsMyName(){
+	char name[99];
+	
+	if(gethostname(name,99)!= 0){
+		std::cout << "i don't know my name."<< std::endl;
+		return;
+	}
+	std::cout << "my name is "<< name << std::endl;
+}
+
+void ServerSocket:: sendM(){
+	char buffer[4096];
+	while (true)
+	{
+		std::cin.getline(buffer,4096);
+
+		//quit command
+		if (strcmp(buffer,"/quit")==0)
+			break;
+    	
+		// Resend message
+		if(send(buffer, strlen(buffer) + 1))
+			break;
+		bzero(buffer, 4096);
+	}
+	closeSocket();
+}
+
+void ServerSocket:: readM(){
+	char buffer[4096];
+
+	while (true)
+	{
+		int bytesRecv = receive(buffer, 4096);
+
+		if(bytesRecv == -1){
+			std::cerr << "There was a connection issue" << std::endl;
+			break;
+		}
+		if(bytesRecv == 0){
+			std::cout << "The client disconnected" << std::endl;
+			break;
+		}
+
+		// Display message
+		std::cout << "Received from client: " << std::string(buffer, 0, bytesRecv) << std::endl;
+		bzero(buffer, 4096);
+	}
+	closeSocket();
+}
+
 ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 	
 	struct sockaddr_in serv_addr;//server address	
@@ -164,4 +217,45 @@ void ClientSocket::closeSocket(){
 		return;
 	close(serverSocket);
 	isConnected = false;
+}
+
+void ClientSocket:: sendM(){
+	char buffer[4096];
+	while (true)
+	{
+		std::cin.getline(buffer,4096);
+
+		//quit command
+		if (strcmp(buffer,"/quit")==0)
+    	{
+    		closeSocket();
+        	return;
+    	}
+		// Resend message
+		if(send(buffer, strlen(buffer) + 1))
+			break;
+		bzero(buffer, 4096);
+	}
+	closeSocket();
+}
+
+void ClientSocket:: readM(){
+	char buffer[4096];
+	while(true){
+		int bytesRecv = receive(buffer, 4096);
+
+		if(bytesRecv == -1){
+			std::cerr << "There was a connection issue" << std::endl;
+			break;
+		}
+		if(bytesRecv == 0){
+			std::cout << "The server disconnected" << std::endl;
+			break;
+		}
+
+		// Display message
+		std::cout << "Received form Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
+        bzero(buffer, 4096);
+	}
+	closeSocket();
 }

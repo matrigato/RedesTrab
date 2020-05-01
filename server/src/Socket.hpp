@@ -12,6 +12,9 @@ class ServerSocket{
 		int receive(char *buffer, int bufferSize);
 		int send(char *buffer, int bufferSize);
 		void closeSocket();
+		void wathsMyName();
+		void sendM();
+		void readM();
 };
 
 class ClientSocket{
@@ -19,13 +22,14 @@ class ClientSocket{
 		bool hasError;
 		bool isConnected;
 		int serverSocket;
-	
 	public:
 	ClientSocket(unsigned short int port, char* serverName);
 	~ClientSocket();
 	int receive(char *buffer, int bufferSize);
 	int send(char *buffer, int bufferSize);
 	void closeSocket();
+	void sendM();
+	void readM();
 };
 
 #endif

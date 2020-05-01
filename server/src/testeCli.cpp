@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <string.h>
+#include <thread>
+#include <mutex>
 
 #define PORT 54001
 
@@ -14,36 +16,11 @@ int main(){
     if(client.send(initMessage, sizeof(initMessage)) == -1)
         std::cout << "erro" << std::endl;
 
-	while(true){
-		//receive message
-		int bytesRecv = client.receive(buffer, 4096);
+	std:: thread t1(&ClientSocket::readM, &client);
+	std:: thread t2(&ClientSocket::sendM, &client);
 
-		if(bytesRecv == -1){
-			std::cerr << "There was a connection issue" << std::endl;
-			break;
-		}
-		if(bytesRecv == 0){
-			std::cout << "The server disconnected" << std::endl;
-			break;
-		}
-
-        
-
-		// Display message
-		std::cout << "Received form Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
-        bzero(buffer, 4096);
-
-		std::cin.getline(buffer,4096);
-        if (strcmp(buffer,"/sair")==0)
-        {
-            client.closeSocket();
-            return 0;
-        }
-        
-		// Resend message
-		client.send(buffer, strlen(buffer)+1);
-        bzero(buffer, 4096);
-	}
+	t1.join();
+	t2.join();
 
 	return 0;
 }
