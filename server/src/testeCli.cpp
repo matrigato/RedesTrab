@@ -5,7 +5,7 @@
 #include <thread>
 #include <mutex>
 
-#define PORT 54001
+#define PORT 54000
 
 int main(){
     char serverName[] = "vini-pc";

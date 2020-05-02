@@ -1,11 +1,14 @@
 #ifndef REDESTRAB_SOCKET_HPP
 #define REDESTRAB_SOCKET_HPP
 
+#include <mutex>
+
 class ServerSocket{
 	private:
 		bool hasError;
 		bool isConnected;
 		int clientSocket;
+		std::mutex mu;
 	public:
 		ServerSocket(unsigned short int port);
 		~ServerSocket();
@@ -22,6 +25,7 @@ class ClientSocket{
 		bool hasError;
 		bool isConnected;
 		int serverSocket;
+		std::mutex mu;
 	public:
 	ClientSocket(unsigned short int port, char* serverName);
 	~ClientSocket();

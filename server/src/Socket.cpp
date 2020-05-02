@@ -7,6 +7,7 @@
 #include <netdb.h> 
 #include <iostream>
 #include <thread>
+#include <mutex>
 
 ServerSocket::ServerSocket(unsigned short int port){
 	hasError = false;
@@ -73,6 +74,7 @@ int ServerSocket::receive(char *buffer, int bufferSize){
 
 	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
 		isConnected = false;
+		std::cout <<"resposta: "<< bytesRecv << std::endl;
 	}
 
 	return bytesRecv;
@@ -92,6 +94,7 @@ int ServerSocket::send(char *buffer, int bufferSize){
 }
 
 void ServerSocket::closeSocket(){
+	std::lock_guard<std::mutex> locker(mu);
 	if(!isConnected)
 		return;
 	close(clientSocket);
@@ -119,7 +122,7 @@ void ServerSocket:: sendM(){
 			break;
     	
 		// Resend message
-		if(send(buffer, strlen(buffer) + 1))
+		if(send(buffer, strlen(buffer) + 1) == -1)
 			break;
 		bzero(buffer, 4096);
 	}
@@ -194,6 +197,7 @@ int ClientSocket::receive(char *buffer, int bufferSize){
 
 	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
 		isConnected = false;
+		std::cout <<"resposta: "<< bytesRecv << std::endl;
 	}
 
 	return bytesRecv;
@@ -213,6 +217,7 @@ int ClientSocket::send(char *buffer, int bufferSize){
 }
 
 void ClientSocket::closeSocket(){
+	std::lock_guard<std::mutex> locker(mu);
 	if(!isConnected)
 		return;
 	close(serverSocket);
@@ -232,7 +237,7 @@ void ClientSocket:: sendM(){
         	return;
     	}
 		// Resend message
-		if(send(buffer, strlen(buffer) + 1))
+		if(send(buffer, strlen(buffer) + 1) == -1)
 			break;
 		bzero(buffer, 4096);
 	}
