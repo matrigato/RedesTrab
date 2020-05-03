@@ -46,7 +46,7 @@ void menu(){
 
 int main(){
 
-	int select;
+	char select;
 
 	do{
 		menu();
@@ -56,19 +56,19 @@ int main(){
 
 		switch (select)
 		{
-			case 1:
+			case '1':
 				server_rotine();
 				break;
-			case 2:
+			case '2':
 				client_rotine();
 				break;
-			case 3:
+			case '3':
 				std::cout << "Saindo..." << std::endl;
 				break;
 			default:
 				std::cout << "Entrada invalida" << std::endl;
 				break;
 		}
-	}while(select > 3 || select < 1);
+	}while(select > '3' || select < '1');
 	return 0;
 }
