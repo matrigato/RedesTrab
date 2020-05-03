@@ -28,7 +28,6 @@ int Socket::receive(char *buffer, int bufferSize){
 
 	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
 		isConnected = false;
-		std::cout<<"\n\rresposta: "<< bytesRecv << std::endl;
 	}
 
 	return bytesRecv;
@@ -69,6 +68,7 @@ void Socket::sendM(){
 		//quit command
 		if (strcmp(buffer,"/quit")==0)
 			break;
+		
 
 		bzero(buffer, 4096);
 	}
@@ -166,11 +166,14 @@ void ServerSocket::readM(){
 		int bytesRecv = receive(buffer, 4096);
 
 		if(bytesRecv == -1){
-			std::cerr << "\n\rThere was a connection issue" << std::endl;
+			std::cerr << "\n\rThere was a connection issue." << std::endl;
+			std::cout << "\tPress enter to close."<<std::endl;
 			break;
 		}
 		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
-			std::cout << "\n\rThe client disconnected" << std::endl;
+			std::cout << "\n\rThe Client disconnected." << std::endl;
+			if( strcmp(buffer,"/quit")==0)
+				std::cout << "\tPress enter to close."<<std::endl;
 			break;
 		}
 
@@ -179,6 +182,7 @@ void ServerSocket::readM(){
 		bzero(buffer, 4096);
 	}
 	closeSocket();
+		
 }
 
 // ClientSocket
@@ -192,7 +196,7 @@ ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 	connectedSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (connectedSocket == -1) {
 		hasError = true;// Can't create socket
-		std::cout << "ERRO: falha em criar em criar um socket" << std::endl;
+		std::cout << "ERRO: falha em criar um socket" << std::endl;
 		return;
 	}
 
@@ -205,10 +209,9 @@ ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 	if (connect(connectedSocket,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) == -1){
 		//connect function is called by the client to establish a connection to the server.
 		hasError = true;
-		std::cout << "ERRO: falha em criar em se conectar ao server" << std::endl;
+		std::cout << "ERRO: falha em se conectar ao server" << std::endl;
 		return;
 	}
-
 	
 	isConnected=  true;
 }
@@ -219,16 +222,14 @@ void ClientSocket::readM(){
 		int bytesRecv = receive(buffer, 4096);
 
 		if(bytesRecv == -1){
-			std::cerr << "\n\rThere was a connection issue" << std::endl;
+			std::cerr << "\n\rThere was a connection issue." << std::endl;
+			std::cout << "\tPress enter to close."<<std::endl;
 			break;
 		}
-		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
-			std::cout << "\n\rThe server disconnected" << std::endl;
-			break;
-		}
-
-		if (strcmp(buffer,"/quit")==0)
-		{
+		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0 ){
+			std::cout << "\n\rDisconnected from server." << std::endl;
+			if(strcmp(buffer,"/quit")==0)
+				std::cout << "\tPress enter to close."<<std::endl;
 			break;
 		}
 

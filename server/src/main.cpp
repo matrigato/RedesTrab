@@ -11,9 +11,9 @@ void server_rotine(){
 
 	std::thread t1(&ServerSocket::readM,&server);
 	std::thread t2(&ServerSocket::sendM,&server);
-
 	t1.join();
 	t2.join();
+	
 }
 
 void client_rotine(){
@@ -25,8 +25,10 @@ void client_rotine(){
 	char initMessage[] = "client is trying to say something to the server";
 	ClientSocket client(PORT, serverName);
 
-	if(client.send(initMessage, sizeof(initMessage)) == -1)
+	if(client.send(initMessage, sizeof(initMessage)) == -1){
 		std::cout << "erro" << std::endl;
+		return;
+	}
 
 	std:: thread t1(&ClientSocket::readM, &client);
 	std:: thread t2(&ClientSocket::sendM, &client);
