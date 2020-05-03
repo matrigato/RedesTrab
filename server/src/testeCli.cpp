@@ -8,13 +8,12 @@
 #define PORT 54000
 
 int main(){
-    char serverName[] = "vini-pc";
-    char initMessage[] = "client is tring to say something to the server\0";
+	char serverName[] = "vini-pc";
+	char initMessage[] = "client is trying to say something to the server\0";
 	ClientSocket client(PORT, serverName);
-	char buffer[4096];
 
-    if(client.send(initMessage, sizeof(initMessage)) == -1)
-        std::cout << "erro" << std::endl;
+	if(client.send(initMessage, sizeof(initMessage)) == -1)
+		std::cout << "erro" << std::endl;
 
 	std:: thread t1(&ClientSocket::readM, &client);
 	std:: thread t2(&ClientSocket::sendM, &client);

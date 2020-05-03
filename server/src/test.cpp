@@ -9,9 +9,7 @@
 
 int main(){
 	ServerSocket server(PORT);
-	server.wathsMyName();
-
-	char buffer[4096];
+	server.whatsMyName();
 
 	std::thread t1(&ServerSocket::readM,&server);
 	std::thread t2(&ServerSocket::sendM,&server);

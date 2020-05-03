@@ -4,10 +4,101 @@
 #include <unistd.h>
 #include <string.h>
 #include <netinet/in.h>
-#include <netdb.h> 
+#include <netdb.h>
 #include <iostream>
 #include <thread>
-#include <mutex>
+
+// Socket (Abstract class)
+
+// Definition is needed for a pure virtual destructor
+Socket::~Socket(){
+	closeSocket();
+}
+
+int Socket::receive(char *buffer, int bufferSize){
+	if(hasError || !isConnected){
+		return -1;
+	}
+
+	// Clear buffer
+	memset(buffer, 0, bufferSize);
+
+	// Wait for a message
+	int bytesRecv = recv(connectedSocket, buffer, bufferSize, 0);
+
+	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
+		isConnected = false;
+		std::cout <<"resposta: "<< bytesRecv << std::endl;
+	}
+
+	return bytesRecv;
+}
+
+int Socket::send(char *buffer, int bufferSize){
+	if(hasError || !isConnected){
+		return -1;
+	}
+
+	if (bufferSize == 1)
+		return 	0;
+
+
+	// calls send from global namespace
+	return ::send(connectedSocket, buffer, bufferSize, 0);
+}
+
+void Socket::closeSocket(){
+	std::lock_guard<std::mutex> locker(mu);
+	if(!isConnected || hasError)
+		return;
+	close(connectedSocket);
+	isConnected = false;
+	hasError = true;
+}
+
+void Socket::sendM(){
+	char buffer[4096];
+	while (true)
+	{
+		std::cin.getline(buffer,4096);
+
+		// Resend message
+		if(send(buffer, strlen(buffer) + 1) == -1)
+			break;
+
+		//quit command
+		if (strcmp(buffer,"/quit")==0)
+			break;
+
+		bzero(buffer, 4096);
+	}
+	closeSocket();
+}
+
+void Socket::readM(){
+	char buffer[4096];
+
+	while (true)
+	{
+		int bytesRecv = receive(buffer, 4096);
+
+		if(bytesRecv == -1){
+			std::cerr << "There was a connection issue" << std::endl;
+			break;
+		}
+		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
+			std::cout << "The other party disconnected" << std::endl;
+			break;
+		}
+
+		// Display message
+		std::cout << "Received: " << std::string(buffer, 0, bytesRecv) << std::endl;
+		bzero(buffer, 4096);
+	}
+	closeSocket();
+}
+
+// ServerSocket
 
 ServerSocket::ServerSocket(unsigned short int port){
 	hasError = false;
@@ -43,8 +134,8 @@ ServerSocket::ServerSocket(unsigned short int port){
 	struct sockaddr_in client;
 	socklen_t clientSize = sizeof(client);
 
-	clientSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
-	if(clientSocket == -1){
+	connectedSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
+	if(connectedSocket == -1){
 		hasError = true; //Problem with client connecting
 		return;
 	}
@@ -55,81 +146,17 @@ ServerSocket::ServerSocket(unsigned short int port){
 	close(sockfd);
 }
 
-ServerSocket::~ServerSocket(){
-	if(!hasError){
-		close(clientSocket);
-	}
-}
-
-int ServerSocket::receive(char *buffer, int bufferSize){
-	if(hasError || !isConnected){
-		return -1;
-	}
-
-	// Clear buffer
-	memset(buffer, 0, bufferSize);
-
-	// Wait for a message
-	int bytesRecv = recv(clientSocket, buffer, bufferSize, 0);
-
-	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
-		isConnected = false;
-		std::cout <<"resposta: "<< bytesRecv << std::endl;
-	}
-
-	return bytesRecv;
-}
-
-int ServerSocket::send(char *buffer, int bufferSize){
-	if(hasError || !isConnected){
-		return -1;
-	}
-
-	if (bufferSize == 1)
-		return 	0;
-	
-
-	// calls send from global namespace
-	return ::send(clientSocket, buffer, bufferSize, 0);
-}
-
-void ServerSocket::closeSocket(){
-	std::lock_guard<std::mutex> locker(mu);
-	if(!isConnected)
-		return;
-	close(clientSocket);
-	isConnected = false;
-}
-
-void ServerSocket::wathsMyName(){
+void ServerSocket::whatsMyName(){
 	char name[99];
-	
+
 	if(gethostname(name,99)!= 0){
-		std::cout << "i don't know my name."<< std::endl;
+		std::cout << "I don't know my name."<< std::endl;
 		return;
 	}
-	std::cout << "my name is "<< name << std::endl;
+	std::cout << "My name is "<< name << std::endl;
 }
 
-void ServerSocket:: sendM(){
-	char buffer[4096];
-	while (true)
-	{
-		std::cin.getline(buffer,4096);
-
-		//quit command
-		if (strcmp(buffer,"/quit")==0)
-			break;
-    	
-		// Resend message
-		if(send(buffer, strlen(buffer) + 1) == -1)
-			break;
-		bzero(buffer, 4096);
-	}
-	closeSocket();
-}
-
-void ServerSocket:: readM(){
+void ServerSocket::readM(){
 	char buffer[4096];
 
 	while (true)
@@ -140,7 +167,7 @@ void ServerSocket:: readM(){
 			std::cerr << "There was a connection issue" << std::endl;
 			break;
 		}
-		if(bytesRecv == 0){
+		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
 			std::cout << "The client disconnected" << std::endl;
 			break;
 		}
@@ -152,24 +179,26 @@ void ServerSocket:: readM(){
 	closeSocket();
 }
 
+// ClientSocket
+
 ClientSocket::ClientSocket(unsigned short int port, char* serverName){
-	
-	struct sockaddr_in serv_addr;//server address	
-    struct hostent *server;
-	
-	serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (serverSocket == -1) {
-        hasError = true;// Can't create socket
+
+	struct sockaddr_in serv_addr;//server address
+	struct hostent *server;
+
+	connectedSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (connectedSocket == -1) {
+		hasError = true;// Can't create socket
 		return;
 	}
 
-	server = gethostbyname(serverName);	
-    serv_addr.sin_family = AF_INET;
+	server = gethostbyname(serverName);
+	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons((uint16_t) port); // htons changes byte order
 
-	bcopy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);//copies length bytes from s1 to s2. 
+	bcopy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);//copies length bytes from s1 to s2.
 
-	if (connect(serverSocket,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) == -1){
+	if (connect(connectedSocket,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) == -1){
 		//connect function is called by the client to establish a connection to the server.
 		hasError = true;
 		return;
@@ -178,73 +207,7 @@ ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 	isConnected=  true;
 }
 
-ClientSocket::~ClientSocket(){
-	if(!hasError){
-		close(serverSocket);
-	}
-}
-
-int ClientSocket::receive(char *buffer, int bufferSize){
-	if(hasError || !isConnected){
-		return -1;
-	}
-
-	// Clear buffer
-	memset(buffer, 0, bufferSize);
-
-	// Wait for a message
-	int bytesRecv = recv(serverSocket, buffer, bufferSize, 0);
-
-	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
-		isConnected = false;
-		std::cout <<"resposta: "<< bytesRecv << std::endl;
-	}
-
-	return bytesRecv;
-}
-
-int ClientSocket::send(char *buffer, int bufferSize){
-	if(hasError || !isConnected){
-		return -1;
-	}
-
-	if (bufferSize == 1)
-		return 	0;
-	
-
-	// calls send from global namespace
-	return ::send(serverSocket, buffer, bufferSize, 0);
-}
-
-void ClientSocket::closeSocket(){
-	std::lock_guard<std::mutex> locker(mu);
-	if(!isConnected)
-		return;
-	close(serverSocket);
-	isConnected = false;
-}
-
-void ClientSocket:: sendM(){
-	char buffer[4096];
-	while (true)
-	{
-		std::cin.getline(buffer,4096);
-
-		//quit command
-		if (strcmp(buffer,"/quit")==0)
-    	{
-    		closeSocket();
-        	return;
-    	}
-		// Resend message
-		if(send(buffer, strlen(buffer) + 1) == -1)
-			break;
-		bzero(buffer, 4096);
-	}
-	closeSocket();
-}
-
-void ClientSocket:: readM(){
+void ClientSocket::readM(){
 	char buffer[4096];
 	while(true){
 		int bytesRecv = receive(buffer, 4096);
@@ -253,14 +216,19 @@ void ClientSocket:: readM(){
 			std::cerr << "There was a connection issue" << std::endl;
 			break;
 		}
-		if(bytesRecv == 0){
+		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
 			std::cout << "The server disconnected" << std::endl;
 			break;
 		}
 
+		if (strcmp(buffer,"/quit")==0)
+		{
+			break;
+		}
+
 		// Display message
-		std::cout << "Received form Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
-        bzero(buffer, 4096);
+		std::cout << "Received from Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
+		bzero(buffer, 4096);
 	}
 	closeSocket();
 }
