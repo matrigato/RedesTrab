@@ -105,6 +105,8 @@ ServerSocket::ServerSocket(unsigned short int port){
 
 	isConnected = false;
 
+	whatsMyName();
+
 	// create socket
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd == -1){

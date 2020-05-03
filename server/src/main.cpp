@@ -8,7 +8,6 @@
 
 void server_rotine(){
 	ServerSocket server(PORT);
-	server.whatsMyName();
 
 	std::thread t1(&ServerSocket::readM,&server);
 	std::thread t2(&ServerSocket::sendM,&server);
@@ -18,7 +17,11 @@ void server_rotine(){
 }
 
 void client_rotine(){
-	char serverName[] = "vini-pc";
+
+	std::cout << "Server Name: ";
+	char serverName[99];
+	std::cin >> serverName;
+	std::cin.ignore();
 	char initMessage[] = "client is trying to say something to the server";
 	ClientSocket client(PORT, serverName);
 
