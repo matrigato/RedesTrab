@@ -8,7 +8,6 @@
 
 void server_rotine(){
 	ServerSocket server(PORT);
-	server.wathsMyName();
 
 	std::thread t1(&ServerSocket::readM,&server);
 	std::thread t2(&ServerSocket::sendM,&server);
@@ -18,12 +17,16 @@ void server_rotine(){
 }
 
 void client_rotine(){
-	char serverName[] = "vini-pc";
-	char initMessage[] = "client is tring to say something to the server";
+
+	std::cout << "Server Name: ";
+	char serverName[99];
+	std::cin >> serverName;
+	std::cin.ignore();
+	char initMessage[] = "client is trying to say something to the server";
 	ClientSocket client(PORT, serverName);
-	
+
 	if(client.send(initMessage, sizeof(initMessage)) == -1)
-	    std::cout << "erro" << std::endl;
+		std::cout << "erro" << std::endl;
 
 	std:: thread t1(&ClientSocket::readM, &client);
 	std:: thread t2(&ClientSocket::sendM, &client);
@@ -36,19 +39,19 @@ void menu(){
 	std::cout << "Você deseja: " << std::endl;
 	std::cout << "\t1 Entrar como Server." << std::endl;
 	std::cout << "\t2 Entrar como Client." << std::endl;
-	std::cout << "\t3 Sair." << std::endl;	
+	std::cout << "\t3 Sair." << std::endl;
 }
 
 int main(){
 
-	menu();
 	int select;
-	std::cin >> select;
-	//ignore \n
-	std::cin.ignore();
 
-	while (select > 3 || select < 1)
-	{
+	do{
+		menu();
+		std::cin >> select;
+		//ignore \n
+		std::cin.ignore();
+
 		switch (select)
 		{
 			case 1:
@@ -58,13 +61,12 @@ int main(){
 				client_rotine();
 				break;
 			case 3:
-				std::cout << "saindo...";
-				break;	
+				std::cout << "Saindo..." << std::endl;
+				break;
 			default:
-				std::cout << "entrada invalida" << std::endl;
-				menu();
+				std::cout << "Entrada invalida" << std::endl;
 				break;
 		}
-	}
+	}while(select > 3 || select < 1);
 	return 0;
 }

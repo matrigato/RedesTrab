@@ -3,37 +3,33 @@
 
 #include <mutex>
 
-class ServerSocket{
-	private:
+// Abstract class
+class Socket{
+	protected:
 		bool hasError;
 		bool isConnected;
-		int clientSocket;
+		int connectedSocket;
 		std::mutex mu;
 	public:
-		ServerSocket(unsigned short int port);
-		~ServerSocket();
+		virtual ~Socket() = 0; // Makes class abstract, but doesn't require definition for destructor.
 		int receive(char *buffer, int bufferSize);
 		int send(char *buffer, int bufferSize);
 		void closeSocket();
-		void wathsMyName();
 		void sendM();
+		virtual void readM();
+};
+
+class ServerSocket : public Socket{
+	public:
+		ServerSocket(unsigned short int port);
+		void whatsMyName();
 		void readM();
 };
 
-class ClientSocket{
-	private:
-		bool hasError;
-		bool isConnected;
-		int serverSocket;
-		std::mutex mu;
+class ClientSocket : public Socket{
 	public:
-	ClientSocket(unsigned short int port, char* serverName);
-	~ClientSocket();
-	int receive(char *buffer, int bufferSize);
-	int send(char *buffer, int bufferSize);
-	void closeSocket();
-	void sendM();
-	void readM();
+		ClientSocket(unsigned short int port, char* serverName);
+		void readM();
 };
 
 #endif
