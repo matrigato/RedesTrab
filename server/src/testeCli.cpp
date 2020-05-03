@@ -9,7 +9,7 @@
 
 int main(){
 	char serverName[] = "vini-pc";
-	char initMessage[] = "client is trying to say something to the server\0";
+	char initMessage[] = "client is trying to say something to the server";
 	ClientSocket client(PORT, serverName);
 
 	if(client.send(initMessage, sizeof(initMessage)) == -1)

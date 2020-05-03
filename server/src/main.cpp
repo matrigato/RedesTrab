@@ -4,7 +4,7 @@
 #include <string.h>
 #include <thread>
 
-#define PORT 54002
+#define PORT 54000
 
 void server_rotine(){
 	ServerSocket server(PORT);

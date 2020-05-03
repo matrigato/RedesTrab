@@ -28,7 +28,7 @@ int Socket::receive(char *buffer, int bufferSize){
 
 	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
 		isConnected = false;
-		std::cout <<"resposta: "<< bytesRecv << std::endl;
+		std::cout<<"\n\rresposta: "<< bytesRecv << std::endl;
 	}
 
 	return bytesRecv;
@@ -83,16 +83,16 @@ void Socket::readM(){
 		int bytesRecv = receive(buffer, 4096);
 
 		if(bytesRecv == -1){
-			std::cerr << "There was a connection issue" << std::endl;
+			std::cerr << "\n\rThere was a connection issue" << std::endl;
 			break;
 		}
 		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
-			std::cout << "The other party disconnected" << std::endl;
+			std::cout << "\n\rThe other party disconnected" << std::endl;
 			break;
 		}
 
 		// Display message
-		std::cout << "Received: " << std::string(buffer, 0, bytesRecv) << std::endl;
+		std::cout << "\n\rReceived: " << std::string(buffer, 0, bytesRecv) << std::endl;
 		bzero(buffer, 4096);
 	}
 	closeSocket();
@@ -166,16 +166,16 @@ void ServerSocket::readM(){
 		int bytesRecv = receive(buffer, 4096);
 
 		if(bytesRecv == -1){
-			std::cerr << "There was a connection issue" << std::endl;
+			std::cerr << "\n\rThere was a connection issue" << std::endl;
 			break;
 		}
 		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
-			std::cout << "The client disconnected" << std::endl;
+			std::cout << "\n\rThe client disconnected" << std::endl;
 			break;
 		}
 
 		// Display message
-		std::cout << "Received from client: " << std::string(buffer, 0, bytesRecv) << std::endl;
+		std::cout << "\n\rReceived from client: " << std::string(buffer, 0, bytesRecv) << std::endl;
 		bzero(buffer, 4096);
 	}
 	closeSocket();
@@ -187,10 +187,12 @@ ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 
 	struct sockaddr_in serv_addr;//server address
 	struct hostent *server;
-
+	
+	hasError = false;
 	connectedSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (connectedSocket == -1) {
 		hasError = true;// Can't create socket
+		std::cout << "ERRO: falha em criar em criar um socket" << std::endl;
 		return;
 	}
 
@@ -203,9 +205,11 @@ ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 	if (connect(connectedSocket,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) == -1){
 		//connect function is called by the client to establish a connection to the server.
 		hasError = true;
+		std::cout << "ERRO: falha em criar em se conectar ao server" << std::endl;
 		return;
 	}
 
+	
 	isConnected=  true;
 }
 
@@ -215,11 +219,11 @@ void ClientSocket::readM(){
 		int bytesRecv = receive(buffer, 4096);
 
 		if(bytesRecv == -1){
-			std::cerr << "There was a connection issue" << std::endl;
+			std::cerr << "\n\rThere was a connection issue" << std::endl;
 			break;
 		}
 		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
-			std::cout << "The server disconnected" << std::endl;
+			std::cout << "\n\rThe server disconnected" << std::endl;
 			break;
 		}
 
@@ -229,7 +233,7 @@ void ClientSocket::readM(){
 		}
 
 		// Display message
-		std::cout << "Received from Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
+		std::cout << "\n\rReceived from Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
 		bzero(buffer, 4096);
 	}
 	closeSocket();

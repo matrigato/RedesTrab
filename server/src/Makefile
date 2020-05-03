@@ -21,6 +21,9 @@ run_client: client
 run_server: server
 	./server
 
+run_main: main
+	./main
+	
 clean:
 	rm -rf *.o
 
