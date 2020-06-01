@@ -57,10 +57,10 @@ void Socket::closeSocket(){
 
 void Socket::sendM(){
 	char buffer[4096];
-	while (true)
+	bool verifyEOF = false;
+	while (std::cin.getline(buffer,4096))
 	{
-		std::cin.getline(buffer,4096);
-
+		verifyEOF = true;
 		// Resend message
 		if(send(buffer, strlen(buffer) + 1) == -1)
 			break;
@@ -71,7 +71,15 @@ void Socket::sendM(){
 		
 
 		bzero(buffer, 4096);
+		verifyEOF = false;
 	}
+	
+	if (!verifyEOF)
+	{
+		strcpy(buffer,"/quit");
+		send(buffer, strlen(buffer));
+	}
+
 	closeSocket();
 }
 

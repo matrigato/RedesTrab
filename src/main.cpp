@@ -3,12 +3,16 @@
 #include <string>
 #include <string.h>
 #include <thread>
+#include <signal.h>
 
 #define PORT 54000
+void sigintHandler(int sig_num){
+	signal(SIGINT,sigintHandler);
+	printf("para fechar o programa utilize o comando /quit");
+}
 
 void server_rotine(){
 	ServerSocket server(PORT);
-
 	std::thread t1(&ServerSocket::readM,&server);
 	std::thread t2(&ServerSocket::sendM,&server);
 	t1.join();
@@ -17,7 +21,7 @@ void server_rotine(){
 }
 
 void client_rotine(){
-
+	
 	std::cout << "Server Name: ";
 	char serverName[99];
 	std::cin >> serverName;
@@ -48,6 +52,7 @@ int main(){
 
 	char select;
 
+	signal(SIGINT,sigintHandler);// ignore ctrl + C 
 	do{
 		menu();
 		std::cin >> select;
