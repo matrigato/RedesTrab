@@ -1,6 +1,6 @@
 #ifndef REDESTRAB_SOCKET_HPP
 #define REDESTRAB_SOCKET_HPP
-
+#include <vector> 
 #include <mutex>
 
 // Abstract class

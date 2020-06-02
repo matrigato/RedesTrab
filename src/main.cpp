@@ -6,6 +6,8 @@
 #include <signal.h>
 
 #define PORT 54000
+
+
 void sigintHandler(int sig_num){
 	signal(SIGINT,sigintHandler);
 	printf("para fechar o programa utilize o comando /quit");
@@ -21,18 +23,27 @@ void server_rotine(){
 }
 
 void client_rotine(){
-	
+	//recives user name
+	std::cout << "User Name: ";
+	char userName[99];
+	std::cin >> userName;
+	std::cin.ignore();
+
+	//recives server name
 	std::cout << "Server Name: ";
 	char serverName[99];
 	std::cin >> serverName;
 	std::cin.ignore();
+	
 	char initMessage[] = "client is trying to say something to the server";
 	ClientSocket client(PORT, serverName);
-
+	
+	std::cout << "tentando se conectar com o servidor " << serverName << "...";
 	if(client.send(initMessage, sizeof(initMessage)) == -1){
 		std::cout << "erro" << std::endl;
 		return;
 	}
+	std::cout << "SUCESSO" << std::endl;
 
 	std:: thread t1(&ClientSocket::readM, &client);
 	std:: thread t2(&ClientSocket::sendM, &client);
@@ -43,8 +54,9 @@ void client_rotine(){
 
 void menu(){
 	std::cout << "Você deseja: " << std::endl;
-	std::cout << "\t1 Entrar como Server." << std::endl;
-	std::cout << "\t2 Entrar como Client." << std::endl;
+	std::cout << "\t1 Entrar como um usuario host." << std::endl;
+	std::cout << "\t1 Iniciar um servidor de uma ChatRoom." << std::endl;
+	std::cout << "\t2 Entrar como Client em uma chatRoom ou se comunicar com um usuario host." << std::endl;
 	std::cout << "\t3 Sair." << std::endl;
 }
 
