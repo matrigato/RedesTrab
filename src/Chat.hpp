@@ -10,10 +10,11 @@ class UserData : public Socket{
 		char userName[14];
 		UserData(int newSocket);
 		UserData(); // Only when going to be overwritten
+		UserData(const UserData &x);
 		bool verifySocket(int otherSocket);
 		void sendNewM(char * buffer, int bSize);
 		long ip; //NOTA: talvez tenha que mudar para char; não faz nada ainda
-		void operator=(UserData &x);
+		void operator=(const UserData &x);
 };
 
 class ChatRoom{

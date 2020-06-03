@@ -218,14 +218,25 @@ void ChatRoom :: listenUser(UserData user, int socket){
 	removeUser(socket);
 }
 
-UserData :: UserData(int newSocket){
+UserData::UserData(int newSocket){
 	isConnected = true;
 	hasError = false;
 	connectedSocket = newSocket;
 }
 
-UserData :: UserData(){
+UserData::UserData(){
 	
+}
+
+UserData::UserData(const UserData &x){
+	for(int i = 0; i < 14; i++){
+		userName[i] = x.userName[i];
+	}
+
+	ip = x.ip;
+	hasError = x.hasError;
+	isConnected = x.isConnected;
+	connectedSocket = x.connectedSocket;
 }
 
 //send a message and if necessary resend it;
@@ -243,7 +254,7 @@ bool UserData :: verifySocket(int otherSocket){
 	return connectedSocket == otherSocket ? true : false;
 }
 
-void UserData::operator=(UserData &x){
+void UserData::operator=(const UserData &x){
 	for(int i = 0; i < 14; i++){
 		userName[i] = x.userName[i];
 	}
