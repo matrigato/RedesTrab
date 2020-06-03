@@ -6,10 +6,11 @@
 
 class UserData : public Socket{
 	public:
-		char userName[50];
+		char userName[14];
 		UserData(int newSocket);
 		bool verifySocket(int otherSocket);
 		long getIp();
+		void sendNewM(char * buffer, int bSize);
 	private:
 		long ip; 
 };
@@ -17,13 +18,14 @@ class UserData : public Socket{
 class ChatRoom{
 	public:
 		int userNum = 0;
-		void sendMToAll();
-		void sendMToUser(char * message);
-		void sendUserM(int userSocket, char * message);
+		void sendMToAll(char * message);//message from server to all
+		void sendUserM(int userSocket, char * message); //message from user to all the other users
 		void whatsMyName();
 		void addNewUser(int newSocket);
 		void removeUser(int userSocket);
+		void listenUser(UserData user, int socket);// listen to one user
 		ChatRoom(unsigned short int port);
+	
 	private:
 		std:: vector<UserData> userVector;
 		bool hasError;

@@ -1,4 +1,5 @@
 #include "Socket.hpp"
+#include "Chat.hpp"
 #include <iostream>
 #include <string>
 #include <string.h>
@@ -40,7 +41,7 @@ void client_rotine(){
 	
 	std::cout << "tentando se conectar com o servidor " << serverName << "...";
 	if(client.send(initMessage, sizeof(initMessage)) == -1){
-		std::cout << "erro" << std::endl;
+		std::cout << "ERRO" << std::endl;
 		return;
 	}
 	std::cout << "SUCESSO" << std::endl;
