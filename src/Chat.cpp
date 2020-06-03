@@ -110,7 +110,9 @@ void ChatRoom :: addNewUser(int newSocket){
 
 
 void ChatRoom :: removeUser(int userSocket){
-	//colocar mutex aqui
+	
+	//block other remotions of the same user and while running
+	std::lock_guard<std::mutex> locker(roomMu);
 	for(int i = 0; i < userVector.size(); i++){ 
 		
 		if(userVector[i].verifySocket(userSocket)){
@@ -131,20 +133,23 @@ void ChatRoom :: removeUser(int userSocket){
 // send a message to all the users, server messages only
 void ChatRoom :: sendMToAll(char * message){
 	
-	//colocar mutex aqui para travar a função de ser acessada multiplas vezes, First In First Out 
-	int bytesSend = 0;
-	for (size_t i = 0; i < userVector.size(); i++)
+	if (userNum > 0)
 	{
-		userVector[i].sendNewM(message, 4096);//send the message to the user
-	}
+		int bytesSend = 0;
+		for (size_t i = 0; i < userVector.size(); i++)
+		{
+			userVector[i].sendNewM(message, 4096);//send the message to the user
+		}
 
-	std::cout << "\n\rSERVER_LOG: : Mensagem do sistema enviada."<< std::endl;
+		std::cout << "\n\rSERVER_LOG: : Mensagem do sistema enviada."<< std::endl;	
+	}
+	
 }
 
 //send a message to all the users, but not the user that make the request
-void ChatRoom :: sendUserM(int userSocket, char * message){
-	//colocar mutex aqui para travar a função de ser acessada multiplas vezes, First In First Out, o mesmo que a função sendMToAll
-
+void ChatRoom :: sendUserM(int userSocket, char * message){	
+	//block other messages while running this
+	std::lock_guard<std::mutex> locker(roomMu);
 	for (size_t i = 0; i < userVector.size(); i++)
 	{
 		if(!userVector[i].verifySocket(userSocket))
@@ -164,12 +169,24 @@ void ChatRoom :: listenUser(UserData user, int socket){
 			break;
 		}
 		else if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
+			
 			std::cout << "\n\rSERVER_LOG: One user disconnected" << std::endl;
 			break;
+
 		}else if(strcmp(buffer, "/ping") == 0){
+			//send /pong in to user
 			strcpy(buffer,"Server: /pong");
-			user.send(buffer, 4096);
+			user.sendNewM(buffer, 4096);
 			std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
+
+		}else if(strncmp(buffer,"/nickname",9)==0){
+			//change the user nick name
+			std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << user.userName << std::endl;
+			
+			//verify if there is a name
+			if(strlen(buffer) > 9 ){
+				//change name
+			}
 		}
 		else{
 			// Display mesage
@@ -203,8 +220,8 @@ void UserData :: sendNewM(char * buffer, int bSize){
 		if(send(buffer, bSize) != -1)
 			return;
 	}
-
 	std::cout << "\n\rSERVER_LOG: Problemas em se conectar com " << userName << std::endl;
+	hasError = true;//will remove this user aand stop the connection
 }
 
 bool UserData :: verifySocket(int otherSocket){
