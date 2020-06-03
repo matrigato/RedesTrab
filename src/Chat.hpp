@@ -9,17 +9,15 @@ class UserData : public Socket{
 		char userName[14];
 		UserData(int newSocket);
 		bool verifySocket(int otherSocket);
-		long getIp();
 		void sendNewM(char * buffer, int bSize);
-	private:
-		long ip; 
+		long ip; //NOTA: talvez tenha que mudar para char; não faz nada ainda
 };
 
 class ChatRoom{
 	public:
 		int userNum = 0;
-		void sendMToAll(char * message);//message from server to all
-		void sendUserM(int userSocket, char * message); //message from user to all the other users
+		void sendMToAll(char * mesage);//mesage from server to all
+		void sendUserM(int userSocket, char * mesage); //mesage from user to all the other users
 		void whatsMyName();
 		void addNewUser(int newSocket);
 		void removeUser(int userSocket);
