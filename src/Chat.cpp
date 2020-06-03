@@ -16,7 +16,7 @@ ChatRoom :: ChatRoom(unsigned short int port){
 	whatsMyName();
 
 	// create socket
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd == -1){
 		std:: cout << "\n\rSERVER_LOG: SOCKET_ERROR" << std:: endl;
 		return;
@@ -44,40 +44,51 @@ ChatRoom :: ChatRoom(unsigned short int port){
 
 	std::cout << "\n\rSERVER_LOG: A sala de chat foi aberta; Esperando por usuarios..." << std::endl;
 
-	while (true)
-	{
-		if(userNum == -1){//closing room; No more users in the room.
-			std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Comcluindo Processo" << std:: endl;
-			break;
-		}
 
-		struct sockaddr_in client;
-		socklen_t clientSize = sizeof(client);
-		int newConnectionSocket;
-		newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
-		
-		if(newConnectionSocket == -1){
-			//Problem with client connecting
-			std:: cout << "\n\rSERVER_LOG: o client não esta conseguindo se conectar" << std:: endl;
-			break;
-		}
+}
 
-		if(userNum >=0  && userNum < 20){//max number of users in the same room
-			addNewUser(newConnectionSocket);
-			//create a new thread and add it to thread vector
-			std::thread t(&ChatRoom::listenUser, this, userVector[userNum-1],newConnectionSocket);
-			threadVector.push_back(t);
-		}else{
-			close(newConnectionSocket);
-		}
+int ChatRoom::accept(UserData *user, int *connection, int *flag){
+	*flag = 0;
+
+	if(userNum == -1){//closing room; No more users in the room.
+		std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Concluindo Processo" << std:: endl;
+		return 1;
 	}
 
+	struct sockaddr_in client;
+	socklen_t clientSize = sizeof(client);
+	int newConnectionSocket;
+	newConnectionSocket = ::accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
+	
+	if(newConnectionSocket == -1){
+		//Problem with client connecting
+		return 1;
+	}
+
+	if(userNum >=0  && userNum < 20){//max number of users in the same room
+		addNewUser(newConnectionSocket);
+		//create a new thread and add it to thread vector
+		*user = userVector[userNum-1];
+		*connection = newConnectionSocket;
+	}else{
+		close(newConnectionSocket);
+		*flag = 1;
+	}
+
+	return 0;
+}
+
+void ChatRoom::destroy(){
 	for (size_t i = 0; i < threadVector.size(); i++)
 	{
 		if(threadVector[i].joinable())
 			threadVector[i].join();
 	}
 }
+
+/*void ChatRoom::newThread(std::thread t){
+	threadVector.push_back(t);
+}*/
 
 void ChatRoom:: whatsMyName(){
 	char name[99];
@@ -92,7 +103,7 @@ void ChatRoom:: whatsMyName(){
 void ChatRoom :: addNewUser(int newSocket){
 	if (userNum >= 0 && userNum < 20)
 	{
-		UserData newUser(newSocket);//create the new user and starts to listem to it
+		UserData newUser(newSocket);//create the new user and starts to listen to it
 		
 		//seting name
 		strcpy(newUser.userName,"user");
@@ -114,7 +125,7 @@ void ChatRoom :: removeUser(int userSocket){
 	
 	//block other remotions of the same user and block messages from being send while running
 	std::lock_guard<std::mutex> locker(roomMu);
-	for(int i = 0; i < userVector.size(); i++){ 
+	for(int i = 0; i < (int) userVector.size(); i++){ 
 		
 		if(userVector[i].verifySocket(userSocket)){
 			//prepare user left message
@@ -122,7 +133,7 @@ void ChatRoom :: removeUser(int userSocket){
 			strcpy(buffer,userVector[i].userName); // nomes de no maximo 14
 			strcat(buffer," saiu da sala.\n");
 			
-			userVector.erase(i);
+			userVector.erase(userVector.begin()+i);
 			
 			sendMToAll(buffer);
 			std::cout << "\n\rSERVER_LOG: " << buffer <<std::endl;
@@ -208,10 +219,25 @@ void ChatRoom :: listenUser(UserData user, int socket){
 	removeUser(socket);
 }
 
-UserData :: UserData(int newSocket){
+UserData::UserData(int newSocket){
 	isConnected = true;
 	hasError = false;
 	connectedSocket = newSocket;
+}
+
+UserData::UserData(){
+	
+}
+
+UserData::UserData(const UserData &x){
+	for(int i = 0; i < 14; i++){
+		userName[i] = x.userName[i];
+	}
+
+	ip = x.ip;
+	hasError = x.hasError;
+	isConnected = x.isConnected;
+	connectedSocket = x.connectedSocket;
 }
 
 //send a message and if necessary resend it;
@@ -227,4 +253,15 @@ void UserData :: sendNewM(char * buffer, int bSize){
 
 bool UserData :: verifySocket(int otherSocket){
 	return connectedSocket == otherSocket ? true : false;
+}
+
+void UserData::operator=(const UserData &x){
+	for(int i = 0; i < 14; i++){
+		userName[i] = x.userName[i];
+	}
+
+	ip = x.ip;
+	hasError = x.hasError;
+	isConnected = x.isConnected;
+	connectedSocket = x.connectedSocket;
 }
