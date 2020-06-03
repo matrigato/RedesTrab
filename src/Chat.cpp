@@ -157,6 +157,10 @@ void ChatRoom :: listenUser(UserData user, int socket){
 		else if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
 			std::cout << "\n\rSERVER_LOG: One user disconnected" << std::endl;
 			break;
+		}else if(strcmp(buffer, "/ping") == 0){
+			strcpy(buffer,"Server: /pong");
+			user.send(buffer, 4096);
+			std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
 		}
 		else{
 			// Display mesage
