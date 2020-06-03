@@ -47,7 +47,7 @@ ChatRoom :: ChatRoom(unsigned short int port){
 	while (true)
 	{
 		if(userNum == -1){//closing room; No more users in the room.
-			std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Comcluindo Processo" << std:: endl;
+			std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Concluindo Processo" << std:: endl;
 			return;
 		}
 
@@ -113,7 +113,7 @@ void ChatRoom :: removeUser(int userSocket){
 	
 	//block other remotions of the same user and while running
 	std::lock_guard<std::mutex> locker(roomMu);
-	for(int i = 0; i < userVector.size(); i++){ 
+	for(int i = 0; i < (int) userVector.size(); i++){ 
 		
 		if(userVector[i].verifySocket(userSocket)){
 			//prepare user left message

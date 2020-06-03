@@ -55,15 +55,16 @@ void client_rotine(){
 
 void menu(){
 	std::cout << "Você deseja: " << std::endl;
-	std::cout << "\t1 Entrar como um usuario host." << std::endl;
-	std::cout << "\t1 Iniciar um servidor de uma ChatRoom." << std::endl;
-	std::cout << "\t2 Entrar como Client em uma chatRoom ou se comunicar com um usuario host." << std::endl;
-	std::cout << "\t3 Sair." << std::endl;
+	std::cout << "\t/host - Entrar como um usuario host." << std::endl;
+	std::cout << "\t/setroom - Iniciar um servidor de uma ChatRoom." << std::endl;
+	std::cout << "\t/connect - Entrar como Client em uma chatRoom ou se comunicar com um usuario host." << std::endl;
+	std::cout << "\t/quit - Sair." << std::endl;
 }
 
 int main(){
 
-	char select;
+	std::string select;
+	bool valid;
 
 	signal(SIGINT,sigintHandler);// ignore ctrl + C 
 	do{
@@ -72,21 +73,20 @@ int main(){
 		//ignore \n
 		std::cin.ignore();
 
-		switch (select)
-		{
-			case '1':
-				server_rotine();
-				break;
-			case '2':
-				client_rotine();
-				break;
-			case '3':
-				std::cout << "Saindo..." << std::endl;
-				break;
-			default:
-				std::cout << "Entrada invalida" << std::endl;
-				break;
+		valid = true;
+
+		if(select.compare("/connect") == 0){
+			client_rotine();
+		}else if(select.compare("/host") == 0){
+			server_rotine();
+		}else if(select.compare("/setroom") == 0){
+			// TODO
+		}else if(select.compare("/quit") == 0){
+			std::cout << "Saindo..." << std::endl;
+		}else{
+			std::cout << "Entrada invalida" << std::endl;
+			valid = false;
 		}
-	}while(select > '3' || select < '1');
+	}while(!valid);
 	return 0;
 }

@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+src/client
+src/server
+src/main
