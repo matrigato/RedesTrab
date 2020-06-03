@@ -57,16 +57,25 @@ ChatRoom :: ChatRoom(unsigned short int port){
 		newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
 		
 		if(newConnectionSocket == -1){
-			hasError = true; //Problem with client connecting
+			//Problem with client connecting
 			return;
 		}
 
 		if(userNum >=0  && userNum < 20){//max number of users in the same room
 			addNewUser(newConnectionSocket);
+			//create a new thread and add it to thread vector
+			std::thread t(&ChatRoom::listenUser, this, userVector[userNum-1],newConnectionSocket);
+			threadVector.push_back(t);
 		}else{
 			close(newConnectionSocket);
 		}
-	} 
+	}
+
+	for (size_t i = 0; i < threadVector.size(); i++)
+	{
+		if(threadVector[i].joinable())
+			threadVector[i].join();
+	}
 }
 
 void ChatRoom:: whatsMyName(){

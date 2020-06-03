@@ -3,6 +3,7 @@
 #include "Socket.hpp"
 #include <vector> 
 #include <mutex>
+#include <thread>
 
 class UserData : public Socket{
 	public:
@@ -26,8 +27,7 @@ class ChatRoom{
 	
 	private:
 		std:: vector<UserData> userVector;
-		bool hasError;
-		bool isConnected;
+		std:: vector<std::thread> threadVector;
 		std::mutex roomMu;
 };
 
