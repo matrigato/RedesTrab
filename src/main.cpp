@@ -6,7 +6,7 @@
 #include <thread>
 #include <signal.h>
 
-#define PORT 54000
+#define PORT 54001
 
 
 void sigintHandler(int sig_num){
@@ -18,17 +18,22 @@ void chat_server_routine(){
 	ChatRoom chat(PORT);
 	int connection, flag;
 	UserData user;
-
-	while(!chat.accept(&user, &connection, &flag)){
-		if(!flag){
-			chat.threadVector.push_back(std::thread(&ChatRoom::listenUser, &chat, user, connection));
+	std::vector<std::thread> threadVector;
+	while(chat.userNum >= 0){
+		if(threadVector.size() != 20){
+			threadVector.push_back(std::thread(&ChatRoom::acceptC, &chat));
 		}
+	}
+	for (size_t i = 0; i < threadVector.size(); i++)
+	{
+		threadVector[i].join();
 	}
 
 	chat.destroy();
 }
 
 void server_rotine(){
+	signal(SIGINT,sigintHandler);// ignore ctrl + C 
 	ServerSocket server(PORT);
 	std::thread t1(&ServerSocket::readM,&server);
 	std::thread t2(&ServerSocket::sendM,&server);
@@ -38,6 +43,7 @@ void server_rotine(){
 }
 
 void client_rotine(){
+	signal(SIGINT,sigintHandler);// ignore ctrl + C 
 	//recives user name
 	std::cout << "User Name: ";
 	char userName[99];
@@ -80,7 +86,7 @@ int main(){
 	std::string select;
 	bool valid;
 
-	signal(SIGINT,sigintHandler);// ignore ctrl + C 
+
 	do{
 		menu();
 		std::cin >> select;

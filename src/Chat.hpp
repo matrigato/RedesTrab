@@ -13,7 +13,7 @@ class UserData : public Socket{
 		UserData(const UserData &x);
 		bool verifySocket(int otherSocket);
 		void sendNewM(char * buffer, int bSize);
-		char ip[50];
+		long ip;
 		void operator=(const UserData &x);
 };
 
@@ -27,10 +27,11 @@ class ChatRoom{
 		void removeUser(int userSocket);
 		void listenUser(UserData user, int socket);// listen to one user
 		ChatRoom(unsigned short int port);
-		int accept(UserData *user, int *connection, int *flag);
+		void acceptC();
 		void destroy();
 		//void newThread(std::thread t);
 		std:: vector<std::thread> threadVector;
+		std:: vector<int> userPool;
 	
 	private:
 		std:: vector<UserData> userVector;

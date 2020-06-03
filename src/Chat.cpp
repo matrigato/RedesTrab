@@ -47,35 +47,36 @@ ChatRoom :: ChatRoom(unsigned short int port){
 
 }
 
-int ChatRoom::accept(UserData *user, int *connection, int *flag){
-	*flag = 0;
+void ChatRoom::acceptC(){
+	//*flag = 0;
 
 	if(userNum == -1){//closing room; No more users in the room.
 		std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Concluindo Processo" << std:: endl;
-		return 1;
+		return ;
 	}
 
 	struct sockaddr_in client;
 	socklen_t clientSize = sizeof(client);
 	int newConnectionSocket;
-	newConnectionSocket = ::accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
+	newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
 	
 	if(newConnectionSocket == -1){
 		//Problem with client connecting
-		return 1;
+		return ;
 	}
 
 	if(userNum >=0  && userNum < 20){//max number of users in the same room
 		addNewUser(newConnectionSocket);
 		//create a new thread and add it to thread vector
-		*user = userVector[userNum-1];
-		*connection = newConnectionSocket;
+		userPool.push_back(newConnectionSocket);
+
 	}else{
+		printf("aqui");
 		close(newConnectionSocket);
-		*flag = 1;
+		//*flag = 1;
 	}
 
-	return 0;
+	return ;
 }
 
 void ChatRoom::destroy(){
@@ -107,14 +108,18 @@ void ChatRoom :: addNewUser(int newSocket){
 		
 		//seting name
 		strcpy(newUser.userName,"user");
-		char* num = "$$";   
-		strcat(newUser.userName,num);
+		char num[] = "$$";   
 		sprintf(num, "%d", userNum);
 		
+		strcat(newUser.userName,num);
+
+
 		//put the user in the vector
 		userVector.push_back(newUser);
 		userNum++;//update the user num
+		listenUser(newUser,newSocket);
 	}else{
+		printf("aqui2");
 		close(newSocket);
 	}
 }
@@ -137,6 +142,9 @@ void ChatRoom :: removeUser(int userSocket){
 			
 			sendMToAll(buffer);
 			std::cout << "\n\rSERVER_LOG: " << buffer <<std::endl;
+			userNum--;
+			if(userNum == 0)
+				userNum = -1;
 			return;
 		}
 	}
@@ -147,7 +155,6 @@ void ChatRoom :: sendMToAll(char * message){
 	
 	if (userNum > 0)
 	{
-		int bytesSend = 0;
 		for (size_t i = 0; i < userVector.size(); i++)
 		{
 			userVector[i].sendNewM(message, 4096);//send the message to the user
