@@ -119,7 +119,7 @@ void ChatRoom :: removeUser(int userSocket){
 			strcpy(buffer,userVector[i].userName); // nomes de no maximo 14
 			strcat(buffer," saiu da sala.\n");
 			
-			userVector.erase(i);
+			userVector.erase(userVector.begin()+i);
 			
 			sendMToAll(buffer);
 			std::cout << "\n\rSERVER_LOG: " << buffer <<std::endl;

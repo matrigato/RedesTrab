@@ -11,7 +11,7 @@
 
 void sigintHandler(int sig_num){
 	signal(SIGINT,sigintHandler);
-	printf("para fechar o programa utilize o comando /quit");
+	printf("para fechar o programa utilize o comando /quit\n");
 }
 
 void server_rotine(){
