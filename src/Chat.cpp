@@ -48,7 +48,7 @@ ChatRoom :: ChatRoom(unsigned short int port){
 	{
 		if(userNum == -1){//closing room; No more users in the room.
 			std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Comcluindo Processo" << std:: endl;
-			return;
+			break;
 		}
 
 		struct sockaddr_in client;
@@ -58,7 +58,8 @@ ChatRoom :: ChatRoom(unsigned short int port){
 		
 		if(newConnectionSocket == -1){
 			//Problem with client connecting
-			return;
+			std:: cout << "\n\rSERVER_LOG: o client não esta conseguindo se conectar" << std:: endl;
+			break;
 		}
 
 		if(userNum >=0  && userNum < 20){//max number of users in the same room
@@ -111,7 +112,7 @@ void ChatRoom :: addNewUser(int newSocket){
 
 void ChatRoom :: removeUser(int userSocket){
 	
-	//block other remotions of the same user and while running
+	//block other remotions of the same user and block messages from being send while running
 	std::lock_guard<std::mutex> locker(roomMu);
 	for(int i = 0; i < userVector.size(); i++){ 
 		
@@ -130,7 +131,7 @@ void ChatRoom :: removeUser(int userSocket){
 	}
 }
 
-// send a message to all the users, server messages only
+// send a message to all the users, server messages only, 
 void ChatRoom :: sendMToAll(char * message){
 	
 	if (userNum > 0)
@@ -146,7 +147,7 @@ void ChatRoom :: sendMToAll(char * message){
 	
 }
 
-//send a message to all the users, but not the user that make the request
+//send a message to all the users, but not the user that make the request, don't use mutex becase the server message have bigger priority
 void ChatRoom :: sendUserM(int userSocket, char * message){	
 	//block other messages while running this
 	std::lock_guard<std::mutex> locker(roomMu);
@@ -159,7 +160,7 @@ void ChatRoom :: sendUserM(int userSocket, char * message){
 }
 
 void ChatRoom :: listenUser(UserData user, int socket){
-	char buffer[4096];//4096
+	char buffer[4096];
 	
 	while(true){
 		int bytesRecv = user.receive(buffer, 4096);

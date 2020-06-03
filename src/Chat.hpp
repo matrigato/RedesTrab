@@ -11,7 +11,7 @@ class UserData : public Socket{
 		UserData(int newSocket);
 		bool verifySocket(int otherSocket);
 		void sendNewM(char * buffer, int bSize);
-		long ip; //NOTA: talvez tenha que mudar para char; não faz nada ainda
+		char ip[50];
 };
 
 class ChatRoom{
