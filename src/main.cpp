@@ -14,6 +14,20 @@ void sigintHandler(int sig_num){
 	printf("para fechar o programa utilize o comando /quit\n");
 }
 
+void chat_server_routine(){
+	ChatRoom chat(PORT);
+	int connection, flag;
+	UserData user;
+
+	while(!chat.accept(&user, &connection, &flag)){
+		if(!flag){
+			chat.threadVector.push_back(std::thread(&ChatRoom::listenUser, &chat, user, connection));
+		}
+	}
+
+	chat.destroy();
+}
+
 void server_rotine(){
 	ServerSocket server(PORT);
 	std::thread t1(&ServerSocket::readM,&server);
@@ -80,7 +94,7 @@ int main(){
 		}else if(select.compare("/host") == 0){
 			server_rotine();
 		}else if(select.compare("/setroom") == 0){
-			// TODO
+			chat_server_routine();
 		}else if(select.compare("/quit") == 0){
 			std::cout << "Saindo..." << std::endl;
 		}else{
