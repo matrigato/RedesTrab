@@ -3,14 +3,18 @@
 #include "Socket.hpp"
 #include <vector> 
 #include <mutex>
+#include <thread>
 
 class UserData : public Socket{
 	public:
 		char userName[14];
 		UserData(int newSocket);
+		UserData(); // Only when going to be overwritten
+		UserData(const UserData &x);
 		bool verifySocket(int otherSocket);
 		void sendNewM(char * buffer, int bSize);
-		long ip; //NOTA: talvez tenha que mudar para char; não faz nada ainda
+		long ip;
+		void operator=(const UserData &x);
 };
 
 class ChatRoom{
@@ -23,12 +27,16 @@ class ChatRoom{
 		void removeUser(int userSocket);
 		void listenUser(UserData user, int socket);// listen to one user
 		ChatRoom(unsigned short int port);
+		void acceptC();
+		void destroy();
+		//void newThread(std::thread t);
+		std:: vector<std::thread> threadVector;
+		std:: vector<int> userPool;
 	
 	private:
 		std:: vector<UserData> userVector;
-		bool hasError;
-		bool isConnected;
 		std::mutex roomMu;
+		int sockfd;
 };
 
 

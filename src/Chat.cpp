@@ -16,7 +16,7 @@ ChatRoom :: ChatRoom(unsigned short int port){
 	whatsMyName();
 
 	// create socket
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd == -1){
 		std:: cout << "\n\rSERVER_LOG: SOCKET_ERROR" << std:: endl;
 		return;
@@ -44,30 +44,52 @@ ChatRoom :: ChatRoom(unsigned short int port){
 
 	std::cout << "\n\rSERVER_LOG: A sala de chat foi aberta; Esperando por usuarios..." << std::endl;
 
-	while (true)
-	{
-		if(userNum == -1){//closing room; No more users in the room.
-			std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Comcluindo Processo" << std:: endl;
-			return;
-		}
 
-		struct sockaddr_in client;
-		socklen_t clientSize = sizeof(client);
-		int newConnectionSocket;
-		newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
-		
-		if(newConnectionSocket == -1){
-			hasError = true; //Problem with client connecting
-			return;
-		}
-
-		if(userNum >=0  && userNum < 20){//max number of users in the same room
-			addNewUser(newConnectionSocket);
-		}else{
-			close(newConnectionSocket);
-		}
-	} 
 }
+
+void ChatRoom::acceptC(){
+	//*flag = 0;
+
+	if(userNum == -1){//closing room; No more users in the room.
+		std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Concluindo Processo" << std:: endl;
+		return ;
+	}
+
+	struct sockaddr_in client;
+	socklen_t clientSize = sizeof(client);
+	int newConnectionSocket;
+	newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
+	
+	if(newConnectionSocket == -1){
+		//Problem with client connecting
+		return ;
+	}
+
+	if(userNum >=0  && userNum < 20){//max number of users in the same room
+		addNewUser(newConnectionSocket);
+		//create a new thread and add it to thread vector
+		userPool.push_back(newConnectionSocket);
+
+	}else{
+		printf("aqui");
+		close(newConnectionSocket);
+		//*flag = 1;
+	}
+
+	return ;
+}
+
+void ChatRoom::destroy(){
+	for (size_t i = 0; i < threadVector.size(); i++)
+	{
+		if(threadVector[i].joinable())
+			threadVector[i].join();
+	}
+}
+
+/*void ChatRoom::newThread(std::thread t){
+	threadVector.push_back(t);
+}*/
 
 void ChatRoom:: whatsMyName(){
 	char name[99];
@@ -82,18 +104,22 @@ void ChatRoom:: whatsMyName(){
 void ChatRoom :: addNewUser(int newSocket){
 	if (userNum >= 0 && userNum < 20)
 	{
-		UserData newUser(newSocket);//create the new user and starts to listem to it
+		UserData newUser(newSocket);//create the new user and starts to listen to it
 		
 		//seting name
 		strcpy(newUser.userName,"user");
-		char* num = "$$";   
-		strcat(newUser.userName,num);
+		char num[] = "$$";   
 		sprintf(num, "%d", userNum);
 		
+		strcat(newUser.userName,num);
+
+
 		//put the user in the vector
 		userVector.push_back(newUser);
 		userNum++;//update the user num
+		listenUser(newUser,newSocket);
 	}else{
+		printf("aqui2");
 		close(newSocket);
 	}
 }
@@ -101,8 +127,10 @@ void ChatRoom :: addNewUser(int newSocket){
 
 
 void ChatRoom :: removeUser(int userSocket){
-	//colocar mutex aqui
-	for(int i = 0; i < userVector.size(); i++){ 
+	
+	//block other remotions of the same user and block messages from being send while running
+	std::lock_guard<std::mutex> locker(roomMu);
+	for(int i = 0; i < (int) userVector.size(); i++){ 
 		
 		if(userVector[i].verifySocket(userSocket)){
 			//prepare user left message
@@ -110,32 +138,37 @@ void ChatRoom :: removeUser(int userSocket){
 			strcpy(buffer,userVector[i].userName); // nomes de no maximo 14
 			strcat(buffer," saiu da sala.\n");
 			
-			userVector.erase(i);
+			userVector.erase(userVector.begin()+i);
 			
 			sendMToAll(buffer);
 			std::cout << "\n\rSERVER_LOG: " << buffer <<std::endl;
+			userNum--;
+			if(userNum == 0)
+				userNum = -1;
 			return;
 		}
 	}
 }
 
-// send a message to all the users, server messages only
+// send a message to all the users, server messages only, 
 void ChatRoom :: sendMToAll(char * message){
 	
-	//colocar mutex aqui para travar a função de ser acessada multiplas vezes, First In First Out 
-	int bytesSend = 0;
-	for (size_t i = 0; i < userVector.size(); i++)
+	if (userNum > 0)
 	{
-		userVector[i].sendNewM(message, 4096);//send the message to the user
-	}
+		for (size_t i = 0; i < userVector.size(); i++)
+		{
+			userVector[i].sendNewM(message, 4096);//send the message to the user
+		}
 
-	std::cout << "\n\rSERVER_LOG: : Mensagem do sistema enviada."<< std::endl;
+		std::cout << "\n\rSERVER_LOG: : Mensagem do sistema enviada."<< std::endl;	
+	}
+	
 }
 
-//send a message to all the users, but not the user that make the request
-void ChatRoom :: sendUserM(int userSocket, char * message){
-	//colocar mutex aqui para travar a função de ser acessada multiplas vezes, First In First Out, o mesmo que a função sendMToAll
-
+//send a message to all the users, but not the user that make the request, don't use mutex becase the server message have bigger priority
+void ChatRoom :: sendUserM(int userSocket, char * message){	
+	//block other messages while running this
+	std::lock_guard<std::mutex> locker(roomMu);
 	for (size_t i = 0; i < userVector.size(); i++)
 	{
 		if(!userVector[i].verifySocket(userSocket))
@@ -145,7 +178,7 @@ void ChatRoom :: sendUserM(int userSocket, char * message){
 }
 
 void ChatRoom :: listenUser(UserData user, int socket){
-	char buffer[4096];//4096
+	char buffer[4096];
 	
 	while(true){
 		int bytesRecv = user.receive(buffer, 4096);
@@ -155,12 +188,24 @@ void ChatRoom :: listenUser(UserData user, int socket){
 			break;
 		}
 		else if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
+			
 			std::cout << "\n\rSERVER_LOG: One user disconnected" << std::endl;
 			break;
+
 		}else if(strcmp(buffer, "/ping") == 0){
+			//send /pong in to user
 			strcpy(buffer,"Server: /pong");
-			user.send(buffer, 4096);
+			user.sendNewM(buffer, 4096);
 			std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
+
+		}else if(strncmp(buffer,"/nickname",9)==0){
+			//change the user nick name
+			std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << user.userName << std::endl;
+			
+			//verify if there is a name
+			if(strlen(buffer) > 9 ){
+				//change name
+			}
 		}
 		else{
 			// Display mesage
@@ -181,10 +226,25 @@ void ChatRoom :: listenUser(UserData user, int socket){
 	removeUser(socket);
 }
 
-UserData :: UserData(int newSocket){
+UserData::UserData(int newSocket){
 	isConnected = true;
 	hasError = false;
 	connectedSocket = newSocket;
+}
+
+UserData::UserData(){
+	
+}
+
+UserData::UserData(const UserData &x){
+	for(int i = 0; i < 14; i++){
+		userName[i] = x.userName[i];
+	}
+
+	ip = x.ip;
+	hasError = x.hasError;
+	isConnected = x.isConnected;
+	connectedSocket = x.connectedSocket;
 }
 
 //send a message and if necessary resend it;
@@ -194,10 +254,21 @@ void UserData :: sendNewM(char * buffer, int bSize){
 		if(send(buffer, bSize) != -1)
 			return;
 	}
-
 	std::cout << "\n\rSERVER_LOG: Problemas em se conectar com " << userName << std::endl;
+	hasError = true;//will remove this user aand stop the connection
 }
 
 bool UserData :: verifySocket(int otherSocket){
 	return connectedSocket == otherSocket ? true : false;
+}
+
+void UserData::operator=(const UserData &x){
+	for(int i = 0; i < 14; i++){
+		userName[i] = x.userName[i];
+	}
+
+	ip = x.ip;
+	hasError = x.hasError;
+	isConnected = x.isConnected;
+	connectedSocket = x.connectedSocket;
 }
