@@ -104,11 +104,11 @@ void ChatRoom :: addNewUser(int newSocket){
 	{
 		UserData newUser(newSocket);//create the new user and starts to listen to it
 		
-		//seting name
+		//setting name
 		strcpy(newUser.userName,"user");
-		char* num = "$$";   
-		strcat(newUser.userName,num);
+		char num[] = "$$";
 		sprintf(num, "%d", userNum);
+		strcat(newUser.userName,num);
 		
 		//put the user in the vector
 		userVector.push_back(newUser);
