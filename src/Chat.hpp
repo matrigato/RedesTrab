@@ -23,20 +23,20 @@ class ChatRoom{
 		void sendMToAll(char * mesage);//mesage from server to all
 		void sendUserM(int userSocket, char * mesage); //mesage from user to all the other users
 		void whatsMyName();
-		void addNewUser(int newSocket);
+		void addNewUser();
 		void removeUser(int userSocket);
 		void listenUser(UserData user, int socket);// listen to one user
 		ChatRoom(unsigned short int port);
 		void acceptC();
-		void destroy();
-		//void newThread(std::thread t);
-		std:: vector<std::thread> threadVector;
-		std:: vector<int> userPool;
+		bool hasSocket();
+		void closeRoom();
 	
 	private:
 		std:: vector<UserData> userVector;
 		std::mutex roomMu;
+		std::mutex connectionMu;
 		int sockfd;
+		int waitingSocket;
 };
 
 

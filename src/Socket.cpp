@@ -7,7 +7,9 @@
 #include <netdb.h>
 #include <iostream>
 #include <thread>
-#include <vector> 
+#include <vector>
+#include <poll.h>
+
 
 // Socket (Abstract class)
 
@@ -20,14 +22,14 @@ int Socket::receive(char *buffer, int bufferSize){
 	if(hasError || !isConnected){
 		return -1;
 	}
-
+	
 	// Clear buffer
 	memset(buffer, 0, bufferSize);
 
-	// Wait for a message
 	int bytesRecv = recv(connectedSocket, buffer, bufferSize, 0);
-
+	
 	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
+
 		isConnected = false;
 	}
 
@@ -35,16 +37,26 @@ int Socket::receive(char *buffer, int bufferSize){
 }
 
 int Socket::send(char *buffer, int bufferSize){
+	
 	if(hasError || !isConnected){
 		return -1;
 	}
 
-	if (bufferSize == 1)
+	if (bufferSize <= 1){
 		return 	0;
+	}
 
+	struct pollfd fds[1];
+	fds[0].fd = connectedSocket;
+	fds[0].events = 0;
+	fds[0].events |= POLLOUT; 
+	if (poll(fds,1, 10000) <= 0)
+	{
+		return 0;
+	}
 
 	// calls send from global namespace
-	return ::send(connectedSocket, buffer, bufferSize, 0);
+	return ::send(connectedSocket, buffer, bufferSize,0);
 }
 
 void Socket::closeSocket(){
@@ -243,7 +255,7 @@ void ClientSocket::readM(){
 		}
 
 		// Display message
-		std::cout << "\n\rReceived from Server: " << std::string(buffer, 0, bytesRecv) << std::endl;
+		std::cout << "\n\r" << std::string(buffer, 0, bytesRecv) << std::endl;
 		bzero(buffer, 4096);
 	}
 	closeSocket();

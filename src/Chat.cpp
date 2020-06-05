@@ -9,18 +9,24 @@
 #include <iostream>
 #include <thread>
 #include <vector> 
-
+#include <poll.h>
 
 ChatRoom :: ChatRoom(unsigned short int port){
-
-	whatsMyName();
-
+	waitingSocket = -1;
 	// create socket
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd == -1){
 		std:: cout << "\n\rSERVER_LOG: SOCKET_ERROR" << std:: endl;
 		return;
 	}
+
+	int opt = 1;
+
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,&opt, sizeof(opt))) 
+    { 
+        perror("setsockopt"); 
+        exit(EXIT_FAILURE); 
+    } 
 
 	// Bind socket to IP / port
 	struct sockaddr_in hint;
@@ -36,60 +42,58 @@ ChatRoom :: ChatRoom(unsigned short int port){
 	}
 
 	// Mark the socket for listening in
-	if(listen(sockfd, SOMAXCONN) == -1){
+	if(listen(sockfd, 25) == -1){
 		 // Can't listen
 		std:: cout << "\n\rSERVER_LOG: LISTEN_ERROR" << std:: endl;
 		return;
 	}
 
+	whatsMyName();
 	std::cout << "\n\rSERVER_LOG: A sala de chat foi aberta; Esperando por usuarios..." << std::endl;
-
-
 }
 
 void ChatRoom::acceptC(){
 	//*flag = 0;
+
+	if(hasSocket())
+		return;
 
 	if(userNum == -1){//closing room; No more users in the room.
 		std:: cout << "\n\rSERVER_LOG: todos os usuarios sairam; Concluindo Processo" << std:: endl;
 		return ;
 	}
 
+	struct pollfd fds[1];
+	fds[0].fd = sockfd;
+	fds[0].events = 0;
+	fds[0].events |= POLLIN;
+	
+	if(poll(fds,1,3000) == 0) // no one is trying to connect
+		return;
+
 	struct sockaddr_in client;
 	socklen_t clientSize = sizeof(client);
-	int newConnectionSocket;
-	newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
-	
-	if(newConnectionSocket == -1){
+	int  * newConnectionSocket =  (int*)malloc(sizeof(int));
+
+	std:: cout << "\n\rSERVER_LOG: ERRNO: " << errno << std:: endl;
+	*newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
+	std:: cout << "\n\rSERVER_LOG: ERRNO: " << errno << std:: endl;
+
+	if(*newConnectionSocket == -1){
+		free(newConnectionSocket);
 		//Problem with client connecting
 		return ;
 	}
 
 	if(userNum >=0  && userNum < 20){//max number of users in the same room
-		addNewUser(newConnectionSocket);
+		waitingSocket = *newConnectionSocket;
 		//create a new thread and add it to thread vector
-		userPool.push_back(newConnectionSocket);
 
-	}else{
-		printf("aqui");
-		close(newConnectionSocket);
-		//*flag = 1;
 	}
-
+	free(newConnectionSocket);
 	return ;
 }
 
-void ChatRoom::destroy(){
-	for (size_t i = 0; i < threadVector.size(); i++)
-	{
-		if(threadVector[i].joinable())
-			threadVector[i].join();
-	}
-}
-
-/*void ChatRoom::newThread(std::thread t){
-	threadVector.push_back(t);
-}*/
 
 void ChatRoom:: whatsMyName(){
 	char name[99];
@@ -101,30 +105,39 @@ void ChatRoom:: whatsMyName(){
 	std::cout << "My name is "<< name << std::endl;
 }
 
-void ChatRoom :: addNewUser(int newSocket){
+void ChatRoom :: addNewUser(){
+	if(!hasSocket())
+		return;
 	if (userNum >= 0 && userNum < 20)
 	{
+		int newSocket = waitingSocket;
+		waitingSocket = -1;//removes the waitng socket
+
 		UserData newUser(newSocket);//create the new user and starts to listen to it
 		
-		//seting name
+		//seting base name
 		strcpy(newUser.userName,"user");
 		char num[] = "$$";   
 		sprintf(num, "%d", userNum);
-		
-		strcat(newUser.userName,num);
 
+		strcat(newUser.userName,num);
 
 		//put the user in the vector
 		userVector.push_back(newUser);
 		userNum++;//update the user num
+		std:: cout << "\n\rSERVER_LOG: ERRNO_ADD: " << errno << std:: endl;
 		listenUser(newUser,newSocket);
+		
 	}else{
-		printf("aqui2");
-		close(newSocket);
+		close(waitingSocket);
+		waitingSocket = -1;
 	}
 }
 
-
+bool ChatRoom::hasSocket(){
+	std::lock_guard<std::mutex> locker(connectionMu);
+	return waitingSocket != -1 ?true : false;
+}
 
 void ChatRoom :: removeUser(int userSocket){
 	
@@ -143,8 +156,10 @@ void ChatRoom :: removeUser(int userSocket){
 			sendMToAll(buffer);
 			std::cout << "\n\rSERVER_LOG: " << buffer <<std::endl;
 			userNum--;
-			if(userNum == 0)
+			if(userNum == 0){
 				userNum = -1;
+				closeRoom();
+			}
 			return;
 		}
 	}
@@ -165,6 +180,7 @@ void ChatRoom :: sendMToAll(char * message){
 	
 }
 
+
 //send a message to all the users, but not the user that make the request, don't use mutex becase the server message have bigger priority
 void ChatRoom :: sendUserM(int userSocket, char * message){	
 	//block other messages while running this
@@ -179,51 +195,64 @@ void ChatRoom :: sendUserM(int userSocket, char * message){
 
 void ChatRoom :: listenUser(UserData user, int socket){
 	char buffer[4096];
-	
+	struct pollfd fds[1];
+	fds[0].fd = socket;
+	fds[0].events = 0;
+	fds[0].events |= POLLIN; 
+
 	while(true){
-		int bytesRecv = user.receive(buffer, 4096);
+		if(poll(fds,1,3000) != 0){
+			std:: cout << "\n\rSERVER_LOG: ERRNO_POLL: " << errno << std:: endl;
+			int bytesRecv = user.receive(buffer, 4096);
 
-		if(bytesRecv == -1){
-			std::cerr << "\n\rSERVER_LOG: There was a connection issue with an user" << std::endl;
-			break;
-		}
-		else if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
-			
-			std::cout << "\n\rSERVER_LOG: One user disconnected" << std::endl;
-			break;
-
-		}else if(strcmp(buffer, "/ping") == 0){
-			//send /pong in to user
-			strcpy(buffer,"Server: /pong");
-			user.sendNewM(buffer, 4096);
-			std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
-
-		}else if(strncmp(buffer,"/nickname",9)==0){
-			//change the user nick name
-			std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << user.userName << std::endl;
-			
-			//verify if there is a name
-			if(strlen(buffer) > 9 ){
-				//change name
+			if(bytesRecv == -1){
+				std::cerr << "\n\rSERVER_LOG: There was a connection issue with an user" << std::endl;
+				break;
 			}
-		}
-		else{
-			// Display mesage
-			std:: cout << "\n\rSERVER_LOG: Nova mensagem de " << user.userName <<";  "
-			<< "\nReceived: " << std::string(buffer, 0, bytesRecv) << std::endl;
-			bzero(buffer, 4096);
-			
-			char message[4101];// userName (14) + :(1) + buffer(4016)
-			strcpy(message,user.userName);
-			strcat(message,":");
-			strcat(message,buffer);
+			else if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
+				
+				std::cout << "\n\rSERVER_LOG: One user disconnected" << std::endl;
+				break;
 
-			sendUserM(socket, message);//send the message to the other users
+			}else if(strcmp(buffer, "/ping") == 0){
+				//send /pong in to user
+				strcpy(buffer,"Server: /pong");
+				user.sendNewM(buffer, 4096);
+				std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
+
+			}else if(strncmp(buffer,"/nickname",9)==0){
+				//change the user nick name
+				std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << user.userName << std::endl;
+
+				//verify if there is a name
+				if(strlen(buffer) > 9 ){
+					//change name
+				}
+			}
+			else{
+				std:: cout << "\n\rSERVER_LOG: ERRNO_SEND: " << errno << std:: endl;
+				// Display mesage
+				std:: cout << "\n\rSERVER_LOG: Nova mensagem de " << user.userName <<";  "
+				<< "\nReceived: " << std::string(buffer, 0, bytesRecv) << std::endl;
+	
+				char message[4096];// userName (14) + ": "(2) + buffer(4096)
+				strcpy(message,user.userName);
+				strcat(message,": ");
+				strcat(message,buffer);
+
+				//sendUserM(socket, message);//send the message to the other users
+				sendMToAll(message);
+				bzero(buffer, 4096);
+			}
 		}
 	}
 	
 	user.closeSocket();
 	removeUser(socket);
+}
+
+void ChatRoom:: closeRoom(){
+	close(sockfd);
 }
 
 UserData::UserData(int newSocket){
@@ -232,9 +261,7 @@ UserData::UserData(int newSocket){
 	connectedSocket = newSocket;
 }
 
-UserData::UserData(){
-	
-}
+UserData::UserData(){}
 
 UserData::UserData(const UserData &x){
 	for(int i = 0; i < 14; i++){
@@ -251,11 +278,12 @@ UserData::UserData(const UserData &x){
 void UserData :: sendNewM(char * buffer, int bSize){
 	for (size_t i = 0; i < 5; i++)
 	{
-		if(send(buffer, bSize) != -1)
+		if(send(buffer, bSize) > -1)
 			return;
+		std::cout << "\n\rSERVER_LOG: ERRNO: "<< errno << std:: endl;
 	}
 	std::cout << "\n\rSERVER_LOG: Problemas em se conectar com " << userName << std::endl;
-	hasError = true;//will remove this user aand stop the connection
+	hasError = true;//will remove this user and stop the connection
 }
 
 bool UserData :: verifySocket(int otherSocket){
