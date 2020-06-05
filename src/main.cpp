@@ -6,7 +6,7 @@
 #include <thread>
 #include <signal.h>
 
-#define PORT 54001
+#define PORT 54005
 
 
 void sigintHandler(int sig_num){
@@ -19,17 +19,20 @@ void chat_server_routine(){
 	int connection, flag;
 	UserData user;
 	std::vector<std::thread> threadVector;
+	
 	while(chat.userNum >= 0){
-		if(threadVector.size() != 20){
-			threadVector.push_back(std::thread(&ChatRoom::acceptC, &chat));
+		if(chat.userNum <= 20){
+			chat.acceptC();
+			
+			if(chat.hasSocket())
+				threadVector.push_back(std::thread(&ChatRoom::addNewUser, &chat));
 		}
 	}
+
 	for (size_t i = 0; i < threadVector.size(); i++)
 	{
 		threadVector[i].join();
 	}
-
-	chat.destroy();
 }
 
 void server_rotine(){
