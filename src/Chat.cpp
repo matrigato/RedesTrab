@@ -4,7 +4,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
-#include <netinet/in.h>
 #include <netdb.h>
 #include <iostream>
 #include <thread>
@@ -75,9 +74,9 @@ void ChatRoom::acceptC(){
 	socklen_t clientSize = sizeof(client);
 	int  * newConnectionSocket =  (int*)malloc(sizeof(int));
 
-	std:: cout << "\n\rSERVER_LOG: ERRNO: " << errno << std:: endl;
+	std:: cout << "\n\rSERVER_LOG: ERRNO_B_ACCEPT: " << errno << std:: endl;
 	*newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
-	std:: cout << "\n\rSERVER_LOG: ERRNO: " << errno << std:: endl;
+	std:: cout << "\n\rSERVER_LOG: ERRNO_A_ACCEPT: " << errno << std:: endl;
 
 	if(*newConnectionSocket == -1){
 		free(newConnectionSocket);
@@ -129,7 +128,6 @@ void ChatRoom :: addNewUser(){
 		listenUser(newUser,newSocket);
 		
 	}else{
-		close(waitingSocket);
 		waitingSocket = -1;
 	}
 }

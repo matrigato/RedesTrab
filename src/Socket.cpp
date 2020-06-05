@@ -3,7 +3,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
-#include <netinet/in.h>
 #include <netdb.h>
 #include <iostream>
 #include <thread>
@@ -19,6 +18,7 @@ Socket::~Socket(){
 }
 
 int Socket::receive(char *buffer, int bufferSize){
+	
 	if(hasError || !isConnected){
 		return -1;
 	}
@@ -26,6 +26,7 @@ int Socket::receive(char *buffer, int bufferSize){
 	// Clear buffer
 	memset(buffer, 0, bufferSize);
 
+	
 	int bytesRecv = recv(connectedSocket, buffer, bufferSize, 0);
 	
 	if(bytesRecv == -1 || bytesRecv == 0){ // Connection error OR the client disconnected
@@ -37,7 +38,6 @@ int Socket::receive(char *buffer, int bufferSize){
 }
 
 int Socket::send(char *buffer, int bufferSize){
-	
 	if(hasError || !isConnected){
 		return -1;
 	}
@@ -56,6 +56,7 @@ int Socket::send(char *buffer, int bufferSize){
 	}
 
 	// calls send from global namespace
+	
 	return ::send(connectedSocket, buffer, bufferSize,0);
 }
 
@@ -239,6 +240,7 @@ ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 
 void ClientSocket::readM(){
 	char buffer[4096];
+
 	while(true){
 		int bytesRecv = receive(buffer, 4096);
 
