@@ -49,6 +49,7 @@ ChatRoom :: ChatRoom(unsigned short int port){
 
 	whatsMyName();
 	std::cout << "\n\rSERVER_LOG: A sala de chat foi aberta; Esperando por usuarios..." << std::endl;
+	
 }
 
 void ChatRoom::acceptC(){
@@ -77,6 +78,7 @@ void ChatRoom::acceptC(){
 	std:: cout << "\n\rSERVER_LOG: ERRNO_B_ACCEPT: " << errno << std:: endl;
 	*newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
 	std:: cout << "\n\rSERVER_LOG: ERRNO_A_ACCEPT: " << errno << std:: endl;
+	
 
 	if(*newConnectionSocket == -1){
 		free(newConnectionSocket);
@@ -113,7 +115,7 @@ void ChatRoom :: addNewUser(){
 		waitingSocket = -1;//removes the waitng socket
 
 		UserData newUser(newSocket);//create the new user and starts to listen to it
-		
+		socks.push_back(newSocket);
 		//seting base name
 		strcpy(newUser.userName,"user");
 		char num[] = "$$";   
@@ -122,7 +124,7 @@ void ChatRoom :: addNewUser(){
 		strcat(newUser.userName,num);
 
 		//put the user in the vector
-		userVector.push_back(newUser);
+		//userVector.push_back(newUser);
 		userNum++;//update the user num
 		std:: cout << "\n\rSERVER_LOG: ERRNO_ADD: " << errno << std:: endl;
 		listenUser(newUser,newSocket);
@@ -141,7 +143,13 @@ void ChatRoom :: removeUser(int userSocket){
 	
 	//block other remotions of the same user and block messages from being send while running
 	std::lock_guard<std::mutex> locker(roomMu);
-	for(int i = 0; i < (int) userVector.size(); i++){ 
+	userNum--;
+	if(userNum == 0){
+		userNum = -1;
+		closeRoom();
+	}
+	close(userSocket);
+	/*for(int i = 0; i < (int) userVector.size(); i++){ 
 		
 		if(userVector[i].verifySocket(userSocket)){
 			//prepare user left message
@@ -153,14 +161,10 @@ void ChatRoom :: removeUser(int userSocket){
 			
 			sendMToAll(buffer);
 			std::cout << "\n\rSERVER_LOG: " << buffer <<std::endl;
-			userNum--;
-			if(userNum == 0){
-				userNum = -1;
-				closeRoom();
-			}
+			
 			return;
 		}
-	}
+	}*/
 }
 
 // send a message to all the users, server messages only, 
@@ -168,9 +172,10 @@ void ChatRoom :: sendMToAll(char * message){
 	
 	if (userNum > 0)
 	{
-		for (size_t i = 0; i < userVector.size(); i++)
+		for (size_t i = 0; i < socks.size(); i++)
 		{
-			userVector[i].sendNewM(message, 4096);//send the message to the user
+			trySend(socks[i], message,4096);
+			//userVector[i].sendNewM(message, 4096);//send the message to the user
 		}
 
 		std::cout << "\n\rSERVER_LOG: : Mensagem do sistema enviada."<< std::endl;	
@@ -183,10 +188,10 @@ void ChatRoom :: sendMToAll(char * message){
 void ChatRoom :: sendUserM(int userSocket, char * message){	
 	//block other messages while running this
 	std::lock_guard<std::mutex> locker(roomMu);
-	for (size_t i = 0; i < userVector.size(); i++)
-	{
+	for (size_t i = 0; i < socks.size(); i++)
+	{/*
 		if(!userVector[i].verifySocket(userSocket))
-			userVector[i].sendNewM(message, strlen(message));
+			userVector[i].sendNewM(message, strlen(message));*/
 	}
 	std::cout << "\n\rSERVER_LOG: Mensagem de um usuario enviada."<< std::endl;
 }
@@ -278,7 +283,8 @@ void UserData :: sendNewM(char * buffer, int bSize){
 	{
 		if(send(buffer, bSize) > -1)
 			return;
-		std::cout << "\n\rSERVER_LOG: ERRNO: "<< errno << std:: endl;
+		std::cout << "\n\rSERVER_LOG: ERRNO: "<< errno << std:: endl; 
+		
 	}
 	std::cout << "\n\rSERVER_LOG: Problemas em se conectar com " << userName << std::endl;
 	hasError = true;//will remove this user and stop the connection
@@ -297,4 +303,34 @@ void UserData::operator=(const UserData &x){
 	hasError = x.hasError;
 	isConnected = x.isConnected;
 	connectedSocket = x.connectedSocket;
+}
+
+
+int ChatRoom:: sendMtoS(int socket, char *buffer, int bufferSize){
+
+
+	if (bufferSize <= 1){
+		return 	0;
+	}
+
+	struct pollfd fds[1];
+	fds[0].fd = socket;
+	fds[0].events = 0;
+	fds[0].events |= POLLOUT; 
+	if (poll(fds,1, 10000) <= 0)
+	{
+		return 0;
+	}
+
+	// calls send from global namespace
+	
+	return ::send(socket, buffer, bufferSize,0);
+}
+
+void ChatRoom:: trySend(int socket, char *buffer, int bufferSize){
+	for (size_t i = 0; i < 5; i++)
+	{
+		if(sendMtoS(socket,buffer, bufferSize) != -1)
+			return;
+	}
 }

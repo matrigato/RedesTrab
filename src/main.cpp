@@ -63,10 +63,10 @@ void client_rotine(){
 	ClientSocket client(PORT, serverName);
 	
 	std::cout << "tentando se conectar com o servidor " << serverName << "...";
-	if(client.send(initMessage, sizeof(initMessage)) == -1){
+	/*if(client.send(initMessage, sizeof(initMessage)) == -1){
 		std::cout << "ERRO" << std::endl;
 		return;
-	}
+	}*/
 	std::cout << "SUCESSO" << std::endl;
 
 	std:: thread t1(&ClientSocket::readM, &client);

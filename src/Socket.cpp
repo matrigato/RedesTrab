@@ -18,7 +18,7 @@ Socket::~Socket(){
 }
 
 int Socket::receive(char *buffer, int bufferSize){
-	
+	sleep(1);
 	if(hasError || !isConnected){
 		return -1;
 	}
@@ -38,6 +38,7 @@ int Socket::receive(char *buffer, int bufferSize){
 }
 
 int Socket::send(char *buffer, int bufferSize){
+
 	if(hasError || !isConnected){
 		return -1;
 	}
@@ -241,24 +242,30 @@ ClientSocket::ClientSocket(unsigned short int port, char* serverName){
 void ClientSocket::readM(){
 	char buffer[4096];
 
+	struct pollfd fds[1];
+	fds[0].fd = connectedSocket;
+	fds[0].events = 0;
+	fds[0].events |= POLLIN; 
+	
 	while(true){
-		int bytesRecv = receive(buffer, 4096);
+		if(poll(fds,1,3000) > 0){
+			int bytesRecv = receive(buffer, 4096);
 
-		if(bytesRecv == -1){
-			std::cerr << "\n\rThere was a connection issue." << std::endl;
-			std::cout << "\tPress enter to close."<<std::endl;
-			break;
-		}
-		if(bytesRecv == 0 || strcmp(buffer,"/quit")==0 ){
-			std::cout << "\n\rDisconnected from server." << std::endl;
-			if(strcmp(buffer,"/quit")==0)
+			if(bytesRecv == -1){
+				std::cerr << "\n\rThere was a connection issue. ERRNO: " << errno  << std::endl;
 				std::cout << "\tPress enter to close."<<std::endl;
-			break;
-		}
+				break;
+			}
+			if(bytesRecv == 0 || strcmp(buffer,"/quit")==0 ){
+				std::cout << "\n\rDisconnected from server. ERRNO: " << errno << std::endl;
+				std::cout << "\tPress enter to close."<<std::endl;
+				break;
+			}
 
-		// Display message
-		std::cout << "\n\r" << std::string(buffer, 0, bytesRecv) << std::endl;
-		bzero(buffer, 4096);
+			// Display message
+			std::cout << "\n\r" << std::string(buffer, 0, bytesRecv) << std::endl;
+			bzero(buffer, 4096);
+		}
 	}
 	closeSocket();
 }
