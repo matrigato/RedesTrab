@@ -18,7 +18,6 @@ Socket::~Socket(){
 }
 
 int Socket::receive(char *buffer, int bufferSize){
-	sleep(1);
 	if(hasError || !isConnected){
 		return -1;
 	}

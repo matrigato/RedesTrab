@@ -11,6 +11,14 @@
 #include <poll.h>
 
 ChatRoom :: ChatRoom(unsigned short int port){
+	//starting users
+	users = (UserData*)malloc(sizeof(UserData) * 20);
+	for(int i = 0; i < 20; i++){
+		users[i] = UserData();
+		users[i].isConnected = false;
+	}
+
+
 	waitingSocket = -1;
 	// create socket
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -53,7 +61,6 @@ ChatRoom :: ChatRoom(unsigned short int port){
 }
 
 void ChatRoom::acceptC(){
-	//*flag = 0;
 
 	if(hasSocket())
 		return;
@@ -115,7 +122,6 @@ void ChatRoom :: addNewUser(){
 		waitingSocket = -1;//removes the waitng socket
 
 		UserData newUser(newSocket);//create the new user and starts to listen to it
-		socks.push_back(newSocket);
 		//seting base name
 		strcpy(newUser.userName,"user");
 		char num[] = "$$";   
@@ -124,7 +130,13 @@ void ChatRoom :: addNewUser(){
 		strcat(newUser.userName,num);
 
 		//put the user in the vector
-		//userVector.push_back(newUser);
+		for (size_t i = 0; i < 20; i++)
+		{
+			if (!users[i].isConnected){
+					users[i] = newUser;
+				break;
+			}
+		}
 		userNum++;//update the user num
 		std:: cout << "\n\rSERVER_LOG: ERRNO_ADD: " << errno << std:: endl;
 		listenUser(newUser,newSocket);
@@ -143,28 +155,27 @@ void ChatRoom :: removeUser(int userSocket){
 	
 	//block other remotions of the same user and block messages from being send while running
 	std::lock_guard<std::mutex> locker(roomMu);
-	userNum--;
-	if(userNum == 0){
-		userNum = -1;
-		closeRoom();
-	}
 	close(userSocket);
-	/*for(int i = 0; i < (int) userVector.size(); i++){ 
+	for(int i = 0; i < 20; i++){ 
 		
-		if(userVector[i].verifySocket(userSocket)){
+		if(users[i].verifySocket(userSocket)){
 			//prepare user left message
 			char buffer[4096];
-			strcpy(buffer,userVector[i].userName); // nomes de no maximo 14
+			strcpy(buffer,users[i].userName); // nomes de no maximo 14
 			strcat(buffer," saiu da sala.\n");
 			
-			userVector.erase(userVector.begin()+i);
-			
+			users[i].isConnected = false;
+
 			sendMToAll(buffer);
 			std::cout << "\n\rSERVER_LOG: " << buffer <<std::endl;
-			
+			userNum--;
+			if(userNum == 0){
+				userNum = -1;
+				closeRoom();
+			}
 			return;
 		}
-	}*/
+	}
 }
 
 // send a message to all the users, server messages only, 
@@ -172,10 +183,10 @@ void ChatRoom :: sendMToAll(char * message){
 	
 	if (userNum > 0)
 	{
-		for (size_t i = 0; i < socks.size(); i++)
+		for (size_t i = 0; i < 20; i++)
 		{
-			trySend(socks[i], message,4096);
-			//userVector[i].sendNewM(message, 4096);//send the message to the user
+			if (users[i].isConnected)
+				users[i].sendNewM(message, 4096);//send the message to the user
 		}
 
 		std::cout << "\n\rSERVER_LOG: : Mensagem do sistema enviada."<< std::endl;	
@@ -183,15 +194,14 @@ void ChatRoom :: sendMToAll(char * message){
 	
 }
 
-
 //send a message to all the users, but not the user that make the request, don't use mutex becase the server message have bigger priority
 void ChatRoom :: sendUserM(int userSocket, char * message){	
 	//block other messages while running this
 	std::lock_guard<std::mutex> locker(roomMu);
-	for (size_t i = 0; i < socks.size(); i++)
-	{/*
-		if(!userVector[i].verifySocket(userSocket))
-			userVector[i].sendNewM(message, strlen(message));*/
+	for (size_t i = 0; i < 20; i++)
+	{
+		if(!users[i].verifySocket(userSocket) && users[i].isConnected)
+			users[i].sendNewM(message, strlen(message));
 	}
 	std::cout << "\n\rSERVER_LOG: Mensagem de um usuario enviada."<< std::endl;
 }
@@ -243,7 +253,6 @@ void ChatRoom :: listenUser(UserData user, int socket){
 				strcat(message,": ");
 				strcat(message,buffer);
 
-				//sendUserM(socket, message);//send the message to the other users
 				sendMToAll(message);
 				bzero(buffer, 4096);
 			}
@@ -256,6 +265,7 @@ void ChatRoom :: listenUser(UserData user, int socket){
 
 void ChatRoom:: closeRoom(){
 	close(sockfd);
+	free(users);
 }
 
 UserData::UserData(int newSocket){
@@ -264,7 +274,16 @@ UserData::UserData(int newSocket){
 	connectedSocket = newSocket;
 }
 
-UserData::UserData(){}
+void UserData :: setSocket(int socket){
+	connectedSocket = socket;
+}
+
+
+UserData::UserData(){
+	isConnected = false;
+	hasError = false;
+	connectedSocket = -1;
+}	
 
 UserData::UserData(const UserData &x){
 	for(int i = 0; i < 14; i++){
@@ -295,6 +314,7 @@ bool UserData :: verifySocket(int otherSocket){
 }
 
 void UserData::operator=(const UserData &x){
+	
 	for(int i = 0; i < 14; i++){
 		userName[i] = x.userName[i];
 	}
@@ -303,34 +323,4 @@ void UserData::operator=(const UserData &x){
 	hasError = x.hasError;
 	isConnected = x.isConnected;
 	connectedSocket = x.connectedSocket;
-}
-
-
-int ChatRoom:: sendMtoS(int socket, char *buffer, int bufferSize){
-
-
-	if (bufferSize <= 1){
-		return 	0;
-	}
-
-	struct pollfd fds[1];
-	fds[0].fd = socket;
-	fds[0].events = 0;
-	fds[0].events |= POLLOUT; 
-	if (poll(fds,1, 10000) <= 0)
-	{
-		return 0;
-	}
-
-	// calls send from global namespace
-	
-	return ::send(socket, buffer, bufferSize,0);
-}
-
-void ChatRoom:: trySend(int socket, char *buffer, int bufferSize){
-	for (size_t i = 0; i < 5; i++)
-	{
-		if(sendMtoS(socket,buffer, bufferSize) != -1)
-			return;
-	}
 }

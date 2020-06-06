@@ -6,12 +6,13 @@
 #include <thread>
 
 class UserData : public Socket{
-	public:
+	public:	
 		char userName[14];
 		UserData(int newSocket);
 		UserData(); // Only when going to be overwritten
 		UserData(const UserData &x);
 		bool verifySocket(int otherSocket);
+		void setSocket(int socket);
 		void sendNewM(char * buffer, int bSize);
 		long ip;
 		void operator=(const UserData &x);
@@ -30,11 +31,8 @@ class ChatRoom{
 		void acceptC();
 		bool hasSocket();
 		void closeRoom();
-		void trySend(int socket, char *buffer, int bufferSize);
-		int sendMtoS(int socket, char *buffer, int bufferSize);
 	private:
-		//std:: vector<UserData> userVector;
-		std :: vector<int> socks;
+		UserData * users;
 		std::mutex roomMu;
 		std::mutex connectionMu;
 		int sockfd;

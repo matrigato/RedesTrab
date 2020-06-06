@@ -16,8 +16,6 @@ void sigintHandler(int sig_num){
 
 void chat_server_routine(){
 	ChatRoom chat(PORT);
-	int connection, flag;
-	UserData user;
 	std::vector<std::thread> threadVector;
 	
 	while(chat.userNum >= 0){
@@ -36,7 +34,6 @@ void chat_server_routine(){
 }
 
 void server_rotine(){
-	signal(SIGINT,sigintHandler);// ignore ctrl + C 
 	ServerSocket server(PORT);
 	std::thread t1(&ServerSocket::readM,&server);
 	std::thread t2(&ServerSocket::sendM,&server);
@@ -46,7 +43,6 @@ void server_rotine(){
 }
 
 void client_rotine(){
-	signal(SIGINT,sigintHandler);// ignore ctrl + C 
 	//recives user name
 	std::cout << "User Name: ";
 	char userName[99];
@@ -63,10 +59,10 @@ void client_rotine(){
 	ClientSocket client(PORT, serverName);
 	
 	std::cout << "tentando se conectar com o servidor " << serverName << "...";
-	/*if(client.send(initMessage, sizeof(initMessage)) == -1){
+	if(client.send(initMessage, sizeof(initMessage)) == -1){
 		std::cout << "ERRO" << std::endl;
 		return;
-	}*/
+	}
 	std::cout << "SUCESSO" << std::endl;
 
 	std:: thread t1(&ClientSocket::readM, &client);
@@ -89,6 +85,7 @@ int main(){
 	std::string select;
 	bool valid;
 
+	signal(SIGINT,sigintHandler);// ignore ctrl + C 
 
 	do{
 		menu();

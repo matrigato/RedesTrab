@@ -5,13 +5,14 @@
 
 // Abstract class
 class Socket{
+
 	protected:
 		bool hasError;
-		bool isConnected;
 		int connectedSocket;
 		std::mutex mu;
 		std::mutex mu2;
 	public:
+		bool isConnected;
 		virtual ~Socket() = 0; // Makes class abstract, but doesn't require definition for destructor.
 		int receive(char *buffer, int bufferSize);
 		int send(char *buffer, int bufferSize);
