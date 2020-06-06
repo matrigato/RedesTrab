@@ -30,9 +30,11 @@ class ChatRoom{
 		void acceptC();
 		bool hasSocket();
 		void closeRoom();
-	
+		void trySend(int socket, char *buffer, int bufferSize);
+		int sendMtoS(int socket, char *buffer, int bufferSize);
 	private:
-		std:: vector<UserData> userVector;
+		//std:: vector<UserData> userVector;
+		std :: vector<int> socks;
 		std::mutex roomMu;
 		std::mutex connectionMu;
 		int sockfd;
