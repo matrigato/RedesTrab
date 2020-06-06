@@ -229,7 +229,7 @@ void ChatRoom :: listenUser(UserData user, int socket){
 
 			}else if(strcmp(buffer, "/ping") == 0){
 				//send /pong in to user
-				strcpy(buffer,"Server: /pong");
+				strcpy(buffer,"Server: pong");
 				user.sendNewM(buffer, 4096);
 				std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
 
