@@ -32,6 +32,7 @@ class ChatRoom{
 		bool hasSocket();
 		void closeRoom();
 	private:
+		int admSocket;
 		UserData * users;
 		std::mutex roomMu;
 		std::mutex connectionMu;

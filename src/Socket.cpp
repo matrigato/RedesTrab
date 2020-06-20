@@ -82,7 +82,6 @@ void Socket::sendM(){
 		//quit command
 		if (strcmp(buffer,"/quit")==0)
 			break;
-		
 
 		bzero(buffer, 4096);
 		verifyEOF = false;

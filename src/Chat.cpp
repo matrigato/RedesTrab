@@ -120,7 +120,8 @@ void ChatRoom :: addNewUser(){
 	{
 		int newSocket = waitingSocket;
 		waitingSocket = -1;//removes the waitng socket
-
+		if(userNum  == 0)
+			admSocket = newSocket;
 		UserData newUser(newSocket);//create the new user and starts to listen to it
 		//seting base name
 		strcpy(newUser.userName,"user");
@@ -138,6 +139,7 @@ void ChatRoom :: addNewUser(){
 			}
 		}
 		userNum++;//update the user num
+
 		std:: cout << "\n\rSERVER_LOG: ERRNO_ADD: " << errno << std:: endl;
 		listenUser(newUser,newSocket);
 		
@@ -172,6 +174,21 @@ void ChatRoom :: removeUser(int userSocket){
 			if(userNum == 0){
 				userNum = -1;
 				closeRoom();
+				return;
+			}
+			
+			if (users[i].verifySocket(admSocket))
+			{
+				for (size_t j = 0; j < 20; j++)
+				{
+					if(users[j].isConnected){
+						admSocket = users[j].connectedSocket;
+						char buffer[4096] = "SERVER: Você é o novo adm da sala";
+						users[j].sendNewM(buffer,4096);
+						return;	
+					}
+				}
+				
 			}
 			return;
 		}
@@ -233,13 +250,21 @@ void ChatRoom :: listenUser(UserData user, int socket){
 				user.sendNewM(buffer, 4096);
 				std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
 
-			}else if(strncmp(buffer,"/nickname",9)==0){
+			}else if(strncmp(buffer,"/nickname ",10)==0){
 				//change the user nick name
 				std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << user.userName << std::endl;
 
 				//verify if there is a name
-				if(strlen(buffer) > 9 ){
-					//change name
+				if(strlen(buffer) >  13){
+						//change name
+						int size = strlen(buffer) - 10;
+					if(size > 14)
+						size = 14;
+
+					for(int i = 0; i < size; i++)
+						user.userName[i] = buffer[i + 10];
+					user.userName[size] = '\0';
+					
 				}
 			}
 			else{
