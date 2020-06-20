@@ -8,6 +8,7 @@
 class UserData : public Socket{
 	public:	
 		char userName[14];
+		bool canTalk;
 		UserData(int newSocket);
 		UserData(); // Only when going to be overwritten
 		UserData(const UserData &x);
@@ -32,6 +33,7 @@ class ChatRoom{
 		bool hasSocket();
 		void closeRoom();
 	private:
+		void commands(char * buffer, UserData user);
 		int admSocket;
 		UserData * users;
 		std::mutex roomMu;

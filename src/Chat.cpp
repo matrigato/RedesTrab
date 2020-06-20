@@ -244,28 +244,9 @@ void ChatRoom :: listenUser(UserData user, int socket){
 				std::cout << "\n\rSERVER_LOG: One user disconnected" << std::endl;
 				break;
 
-			}else if(strcmp(buffer, "/ping") == 0){
-				//send /pong in to user
-				strcpy(buffer,"Server: pong");
-				user.sendNewM(buffer, 4096);
-				std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
-
-			}else if(strncmp(buffer,"/nickname ",10)==0){
-				//change the user nick name
-				std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << user.userName << std::endl;
-
-				//verify if there is a name
-				if(strlen(buffer) >  13){
-						//change name
-						int size = strlen(buffer) - 10;
-					if(size > 14)
-						size = 14;
-
-					for(int i = 0; i < size; i++)
-						user.userName[i] = buffer[i + 10];
-					user.userName[size] = '\0';
-					
-				}
+			}
+			else if(buffer[0] == '/'){ //um comando esta sendo chamado
+				commands(buffer, user);
 			}
 			else{
 				std:: cout << "\n\rSERVER_LOG: ERRNO_SEND: " << errno << std:: endl;
@@ -291,6 +272,60 @@ void ChatRoom :: listenUser(UserData user, int socket){
 void ChatRoom:: closeRoom(){
 	close(sockfd);
 	free(users);
+}
+
+void ChatRoom :: commands(char * buffer, UserData user){
+	if(strcmp(buffer, "/ping") == 0){
+		//send /pong in to user
+		strcpy(buffer,"Server: pong");
+		user.sendNewM(buffer, 4096);
+		std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
+
+	}
+	else if(strncmp(buffer,"/nickname ",10)==0){
+		//change the user nick name
+		std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << user.userName << std::endl;
+
+		//verify if there is a name
+		if(strlen(buffer) >  13){
+				//change name
+				int size = strlen(buffer) - 10;
+			if(size > 14)
+				size = 14;
+
+			for(int i = 0; i < size; i++)
+				user.userName[i] = buffer[i + 10];
+			user.userName[size] = '\0';
+			
+		}
+	}
+	else if(strncmp(buffer,"/kick ",6)){
+		if(!user.verifySocket(admSocket)){
+			strcpy(buffer, "Server: comando invalido.");
+		}
+
+	}else if(strncmp(buffer,"/mute ",6)){
+		if(!user.verifySocket(admSocket)){
+			strcpy(buffer, "Server: comando invalido.");
+		}
+
+	}
+	else if(strncmp(buffer,"/unmute ",8)){
+		if(!user.verifySocket(admSocket)){
+			strcpy(buffer, "Server: comando invalido.");
+		}
+
+	}else if(strncmp(buffer,"/whois ",7)){
+		if(!user.verifySocket(admSocket)){
+			strcpy(buffer, "Server: comando invalido.");
+		}
+
+	}
+	else{
+		strcpy(buffer,"Server: Comando invalido");
+		user.sendNewM(buffer, 4096);
+	}
+	
 }
 
 UserData::UserData(int newSocket){
