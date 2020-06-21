@@ -301,23 +301,43 @@ void ChatRoom :: commands(char * buffer, UserData user){
 	}
 	else if(strncmp(buffer,"/kick ",6)){
 		if(!user.verifySocket(admSocket)){
+			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
+			return;
+		}
+		std:: cout << "\n\rSERVER_LOG: Kick request de " << user.userName << std::endl;
+		if(strlen(buffer) >  9){
+			char name[14];
+			int size = strlen(buffer) - 6;
+			for (size_t i = 0; i < size; i++)
+			{
+				name[i] = buffer[6 + i];
+			}
+			name[size] = '\0';
+			kick(name);	
 		}
 
-	}else if(strncmp(buffer,"/mute ",6)){
+	}
+	else if(strncmp(buffer,"/mute ",6)){
 		if(!user.verifySocket(admSocket)){
+			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
+			return;
 		}
 
 	}
 	else if(strncmp(buffer,"/unmute ",8)){
 		if(!user.verifySocket(admSocket)){
+			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
+			return;
 		}
-
-	}else if(strncmp(buffer,"/whois ",7)){
+	}
+	else if(strncmp(buffer,"/whois ",7)){
 		if(!user.verifySocket(admSocket)){
+			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
+			return;
 		}
 
 	}
@@ -328,10 +348,20 @@ void ChatRoom :: commands(char * buffer, UserData user){
 	
 }
 
+void ChatRoom :: kick(char* name){
+	for(int i = 0; i < 20; i++){
+		if(users[i].isConnected && (strcmp(users[i].userName, name) == 0)){
+			removeUser(users[i].connectedSocket);
+			return;
+		}
+	}
+}
+
 UserData::UserData(int newSocket){
 	isConnected = true;
 	hasError = false;
 	connectedSocket = newSocket;
+	canTalk = true;
 }
 
 void UserData :: setSocket(int socket){
