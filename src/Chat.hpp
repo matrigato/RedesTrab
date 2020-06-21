@@ -33,6 +33,7 @@ class ChatRoom{
 		bool hasSocket();
 		void closeRoom();
 		void kick(char* name);
+		void mute(char* name, bool state);
 	private:
 		void commands(char * buffer, UserData user);
 		int admSocket;

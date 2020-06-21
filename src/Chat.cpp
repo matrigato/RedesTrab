@@ -253,15 +253,22 @@ void ChatRoom :: listenUser(UserData user, int socket){
 				// Display mesage
 				std:: cout << "\n\rSERVER_LOG: Nova mensagem de " << user.userName <<";  "
 				<< "\nReceived: " << std::string(buffer, 0, bytesRecv) << std::endl;
-	
-				char message[4096];// userName (14) + ": "(2) + buffer(4096)
-				strcpy(message,user.userName);
-				strcat(message,": ");
-				strcat(message,buffer);
+	            
+				if(user.canTalk){
+					char message[4096];// userName (14) + ": "(2) + buffer(4096)
+					strcpy(message,user.userName);
+					strcat(message,": ");
+					strcat(message,buffer);
 
-				sendMToAll(message);
-				bzero(buffer, 4096);
+					sendMToAll(message);
+				}
+				else{
+					strcpy(buffer, "SERVER: O adm mutou você.");
+					user.sendNewM(buffer, 4096);
+				}
+				
 			}
+			bzero(buffer, 4096);
 		}
 	}
 	
@@ -316,13 +323,23 @@ void ChatRoom :: commands(char * buffer, UserData user){
 			name[size] = '\0';
 			kick(name);	
 		}
-
 	}
 	else if(strncmp(buffer,"/mute ",6)){
 		if(!user.verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
+		}
+		std:: cout << "\n\rSERVER_LOG: Mute request de " << user.userName << std::endl;
+		if(strlen(buffer) >  9){
+			char name[14];
+			int size = strlen(buffer) - 6;
+			for (size_t i = 0; i < size; i++)
+			{
+				name[i] = buffer[6 + i];
+			}
+			name[size] = '\0';
+			mute(name, false);	
 		}
 
 	}
@@ -331,6 +348,17 @@ void ChatRoom :: commands(char * buffer, UserData user){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
+		}
+		std:: cout << "\n\rSERVER_LOG: UnMute request de " << user.userName << std::endl;
+		if(strlen(buffer) >  9){
+			char name[14];
+			int size = strlen(buffer) - 6;
+			for (size_t i = 0; i < size; i++)
+			{
+				name[i] = buffer[6 + i];
+			}
+			name[size] = '\0';
+			mute(name, true);	
 		}
 	}
 	else if(strncmp(buffer,"/whois ",7)){
@@ -356,6 +384,17 @@ void ChatRoom :: kick(char* name){
 		}
 	}
 }
+
+
+void ChatRoom :: mute(char* name, bool state){
+	for(int i = 0; i < 20; i++){
+		if(users[i].isConnected && (strcmp(users[i].userName, name) == 0)){
+			users[i].canTalk = state;
+			return;
+		}
+	}
+}
+
 
 UserData::UserData(int newSocket){
 	isConnected = true;
