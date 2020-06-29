@@ -129,19 +129,25 @@ void ChatRoom :: addNewUser(){
 		sprintf(num, "%d", userNum);
 
 		strcat(newUser.userName,num);
+		
+		//new user id
+		int newId = -1;
 
 		//put the user in the vector
 		for (size_t i = 0; i < 20; i++)
 		{
 			if (!users[i].isConnected){
-					users[i] = newUser;
+				users[i] = newUser;
+				newId = i;
 				break;
 			}
 		}
 		userNum++;//update the user num
 
 		std:: cout << "\n\rSERVER_LOG: ERRNO_ADD: " << errno << std:: endl;
-		listenUser(newUser,newSocket);
+		
+		//start to listen the user with the new id
+		listenUser(newId ,newSocket);
 		
 	}else{
 		waitingSocket = -1;
@@ -223,7 +229,7 @@ void ChatRoom :: sendUserM(int userSocket, char * message){
 	std::cout << "\n\rSERVER_LOG: Mensagem de um usuario enviada."<< std::endl;
 }
 
-void ChatRoom :: listenUser(UserData user, int socket){
+void ChatRoom :: listenUser(int id, int socket){
 	char buffer[4096];
 	struct pollfd fds[1];
 	fds[0].fd = socket;
@@ -233,7 +239,7 @@ void ChatRoom :: listenUser(UserData user, int socket){
 	while(true){
 		if(poll(fds,1,3000) != 0){
 			std:: cout << "\n\rSERVER_LOG: ERRNO_POLL: " << errno << std:: endl;
-			int bytesRecv = user.receive(buffer, 4096);
+			int bytesRecv = users[id].receive(buffer, 4096);
 
 			if(bytesRecv == -1){
 				std::cerr << "\n\rSERVER_LOG: There was a connection issue with an user" << std::endl;
@@ -246,17 +252,17 @@ void ChatRoom :: listenUser(UserData user, int socket){
 
 			}
 			else if(buffer[0] == '/'){ //um comando esta sendo chamado
-				commands(buffer, user);
+				commands(buffer, id);
 			}
 			else{
 				std:: cout << "\n\rSERVER_LOG: ERRNO_SEND: " << errno << std:: endl;
 				// Display mesage
-				std:: cout << "\n\rSERVER_LOG: Nova mensagem de " << user.userName <<";  "
+				std:: cout << "\n\rSERVER_LOG: Nova mensagem de " << users[id].userName <<";  "
 				<< "\nReceived: " << std::string(buffer, 0, bytesRecv) << std::endl;
 	            
-				if(user.canTalk){
+				if(users[id].canTalk){
 					char message[4096];// userName (14) + ": "(2) + buffer(4096)
-					strcpy(message,user.userName);
+					strcpy(message,users[id].userName);
 					strcat(message,": ");
 					strcat(message,buffer);
 
@@ -264,7 +270,7 @@ void ChatRoom :: listenUser(UserData user, int socket){
 				}
 				else{
 					strcpy(buffer, "SERVER: O adm mutou você.");
-					user.sendNewM(buffer, 4096);
+					users[id].sendNewM(buffer, 4096);
 				}
 				
 			}
@@ -272,7 +278,7 @@ void ChatRoom :: listenUser(UserData user, int socket){
 		}
 	}
 	
-	user.closeSocket();
+	users[id].closeSocket();
 	removeUser(socket);
 }
 
@@ -281,17 +287,17 @@ void ChatRoom:: closeRoom(){
 	free(users);
 }
 
-void ChatRoom :: commands(char * buffer, UserData user){
+void ChatRoom :: commands(char * buffer, int id){
 	if(strcmp(buffer, "/ping") == 0){
 		//send /pong in to user
 		strcpy(buffer,"Server: pong");
-		user.sendNewM(buffer, 4096);
-		std:: cout << "\n\rSERVER_LOG: Ping request de " << user.userName << std::endl;
+		users[id].sendNewM(buffer, 4096);
+		std:: cout << "\n\rSERVER_LOG: Ping request de " << users[id].userName << std::endl;
 
 	}
 	else if(strncmp(buffer,"/nickname ",10)==0){
 		//change the user nick name
-		std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << user.userName << std::endl;
+		std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << users[id].userName << std::endl;
 
 		//verify if there is a name
 		if(strlen(buffer) >  13){
@@ -301,18 +307,18 @@ void ChatRoom :: commands(char * buffer, UserData user){
 				size = 14;
 
 			for(int i = 0; i < size; i++)
-				user.userName[i] = buffer[i + 10];
-			user.userName[size] = '\0';
+				users[id].userName[i] = buffer[i + 10];
+			users[id].userName[size] = '\0';
 			
 		}
 	}
 	else if(strncmp(buffer,"/kick ",6)){
-		if(!user.verifySocket(admSocket)){
+		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
 		}
-		std:: cout << "\n\rSERVER_LOG: Kick request de " << user.userName << std::endl;
+		std:: cout << "\n\rSERVER_LOG: Kick request de " << users[id].userName << std::endl;
 		if(strlen(buffer) >  9){
 			char name[14];
 			int size = strlen(buffer) - 6;
@@ -325,12 +331,12 @@ void ChatRoom :: commands(char * buffer, UserData user){
 		}
 	}
 	else if(strncmp(buffer,"/mute ",6)){
-		if(!user.verifySocket(admSocket)){
+		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
 		}
-		std:: cout << "\n\rSERVER_LOG: Mute request de " << user.userName << std::endl;
+		std:: cout << "\n\rSERVER_LOG: Mute request de " << users[id].userName << std::endl;
 		if(strlen(buffer) >  9){
 			char name[14];
 			int size = strlen(buffer) - 6;
@@ -344,12 +350,12 @@ void ChatRoom :: commands(char * buffer, UserData user){
 
 	}
 	else if(strncmp(buffer,"/unmute ",8)){
-		if(!user.verifySocket(admSocket)){
+		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
 		}
-		std:: cout << "\n\rSERVER_LOG: UnMute request de " << user.userName << std::endl;
+		std:: cout << "\n\rSERVER_LOG: UnMute request de " << users[id].userName << std::endl;
 		if(strlen(buffer) >  9){
 			char name[14];
 			int size = strlen(buffer) - 6;
@@ -362,7 +368,7 @@ void ChatRoom :: commands(char * buffer, UserData user){
 		}
 	}
 	else if(strncmp(buffer,"/whois ",7)){
-		if(!user.verifySocket(admSocket)){
+		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
@@ -371,7 +377,7 @@ void ChatRoom :: commands(char * buffer, UserData user){
 	}
 	else{
 		strcpy(buffer,"Server: Comando invalido");
-		user.sendNewM(buffer, 4096);
+		users[id].sendNewM(buffer, 4096);
 	}
 	
 }

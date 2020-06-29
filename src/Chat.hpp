@@ -27,7 +27,7 @@ class ChatRoom{
 		void whatsMyName();
 		void addNewUser();
 		void removeUser(int userSocket);
-		void listenUser(UserData user, int socket);// listen to one user
+		void listenUser(int id, int socket);// listen to one user
 		ChatRoom(unsigned short int port);
 		void acceptC();
 		bool hasSocket();
@@ -35,7 +35,7 @@ class ChatRoom{
 		void kick(char* name);
 		void mute(char* name, bool state);
 	private:
-		void commands(char * buffer, UserData user);
+		void commands(char * buffer, int id);
 		int admSocket;
 		UserData * users;
 		std::mutex roomMu;
