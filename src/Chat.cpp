@@ -356,7 +356,7 @@ void ChatRoom :: commands(char * buffer, int id){
 			strcpy(buffer, "Server: comando invalido.");
 			return;
 		}
-		std:: cout << "\n\rSERVER_LOG: Kick request de " << users[id].userName << std::endl;
+		
 		if(strlen(buffer) >  9){
 			char name[14];
 			int size = strlen(buffer) - 6;
@@ -365,7 +365,15 @@ void ChatRoom :: commands(char * buffer, int id){
 				name[i] = buffer[6 + i];
 			}
 			name[size] = '\0';
-			kick(name);	
+			std:: cout << "\n\rSERVER_LOG: Kick request de " << users[id].userName << " para "<< name << std::endl;
+			int otherId = getUserByName(name);
+			if(otherId != -1){
+				removeUser(users[otherId].connectedSocket);
+				strcpy(buffer,"\n\rSERVER_LOG: Sucesso no processo de Kick");	
+			}else{
+				strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de kick; Verifique se o nome do usuario esta correto");
+			}
+
 		}
 	}
 	else if(strncmp(buffer,"/mute ",6) == 0){
@@ -408,7 +416,7 @@ void ChatRoom :: commands(char * buffer, int id){
 			return;
 		}
 
-		if(strlen(buffer) >  8){
+		if(strlen(buffer) >  11){
 			char name[14];
 			int size = strlen(buffer) - 8;
 			for (size_t i = 0; i < size; i++)
@@ -438,7 +446,7 @@ void ChatRoom :: commands(char * buffer, int id){
 			return;
 		}
 		else{
-			if(strlen(buffer) >  7)
+			if(strlen(buffer) >  10)
 			{
 				char name[14];
 				int size = strlen(buffer) - 7;
@@ -470,7 +478,13 @@ void ChatRoom :: commands(char * buffer, int id){
 
 	}
 	else if(strcmp(buffer,"/help") == 0){
-
+		strcpy(buffer,"Comandos:\n");
+		strcat(buffer,"\t /ping: o servidor retorna pong.\n");
+		strcat(buffer,"\t /nickname NAME: muda o nome do usuario no servidor para o nome indicado no campo NAME.\n");
+		strcat(buffer,"\t /kick NAME: remove do servidor o usuario de nome NAME (adm apenas).\n");
+		strcat(buffer,"\t /mute NAME: remove a capacidade de falar do usuario de nome NAME (adm apenas).\n");
+		strcat(buffer,"\t /unmute NAME: retorna a capacidade de falar do usuario de nome NAME (adm apenas).\n");
+		strcat(buffer,"\t /whois NAME: retorna o ip do usuario de nome NAME (adm apenas).\n");
 	}
 	else{
 		strcpy(buffer,"Server: Comando invalido");
