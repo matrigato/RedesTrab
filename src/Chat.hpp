@@ -33,7 +33,6 @@ class ChatRoom{
 		void acceptC();
 		bool hasSocket();
 		void closeRoom();
-		void kick(char* name);
 		int getUserByName(char* name);
 		char roomName[50];
 	private:

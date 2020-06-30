@@ -478,28 +478,35 @@ void ChatRoom :: commands(char * buffer, int id){
 
 	}
 	else if(strcmp(buffer,"/help") == 0){
-		strcpy(buffer,"Comandos:\n");
-		strcat(buffer,"\t /ping: o servidor retorna pong.\n");
-		strcat(buffer,"\t /nickname NAME: muda o nome do usuario no servidor para o nome indicado no campo NAME.\n");
-		strcat(buffer,"\t /kick NAME: remove do servidor o usuario de nome NAME (adm apenas).\n");
-		strcat(buffer,"\t /mute NAME: remove a capacidade de falar do usuario de nome NAME (adm apenas).\n");
-		strcat(buffer,"\t /unmute NAME: retorna a capacidade de falar do usuario de nome NAME (adm apenas).\n");
-		strcat(buffer,"\t /whois NAME: retorna o ip do usuario de nome NAME (adm apenas).\n");
+		strcpy(buffer,"\nComandos:\n");
+		strcat(buffer,"\t/ping: o servidor retorna pong.\n");
+		strcat(buffer,"\t/nickname NAME: muda o nome do usuario no servidor para o nome indicado no campo NAME.\n");
+		strcat(buffer,"\t/kick NAME: remove do servidor o usuario de nome NAME (adm apenas).\n");
+		strcat(buffer,"\t/mute NAME: remove a capacidade de falar do usuario de nome NAME (adm apenas).\n");
+		strcat(buffer,"\t/unmute NAME: retorna a capacidade de falar do usuario de nome NAME (adm apenas).\n");
+		strcat(buffer,"\t/whois NAME: retorna o ip do usuario de nome NAME (adm apenas).\n");
+		strcat(buffer,"\t/users: mostra os usuarios na sala.\n");
+
+		users[id].sendNewM(buffer, 4096);
+	}
+	else if(strcmp(buffer,"/users")==0){
+		strcpy(buffer,"\nUSERS:");
+
+		for(int i = 0; i < 20; i++){
+			if(users[i].isConnected){
+				strcat(buffer,"\n\t");
+				strcat(buffer,users[i].userName);
+			}
+		}
+
+		strcat(buffer,"\n");
+		users[id].sendNewM(buffer, 4096);
 	}
 	else{
-		strcpy(buffer,"Server: Comando invalido");
+		strcpy(buffer,"Server: Comando invalido, tente usar /help para ver os comandos.");
 		users[id].sendNewM(buffer, 4096);
 	}
 	
-}
-
-void ChatRoom :: kick(char* name){
-	for(int i = 0; i < 20; i++){
-		if(users[i].isConnected && (strcmp(users[i].userName, name) == 0)){
-			removeUser(users[i].connectedSocket);
-			return;
-		}
-	}
 }
 
 int  ChatRoom :: getUserByName(char* name){
