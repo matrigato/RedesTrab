@@ -7,8 +7,7 @@
 #include <string.h>
 #include <netdb.h>
 #include <iostream>
-#include <thread>
-#include <vector> 
+#include <thread> 
 #include <poll.h>
 
 ChatRoom :: ChatRoom(unsigned short int port){
@@ -65,6 +64,13 @@ ChatRoom :: ChatRoom(unsigned short int port){
 }
 
 ChatRoom :: ChatRoom(){
+	
+	users = (UserData*)malloc(sizeof(UserData) * 20);
+	for(int i = 0; i < 20; i++){
+		users[i] = UserData();
+		users[i].isConnected = false;
+	}
+	sockfd = -1;
 	waitingSocket = -1;
 	bzero(waitingIp,50);
 	bzero(roomName,50);
