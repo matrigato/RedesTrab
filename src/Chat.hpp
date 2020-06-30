@@ -15,7 +15,7 @@ class UserData : public Socket{
 		bool verifySocket(int otherSocket);
 		void setSocket(int socket);
 		void sendNewM(char * buffer, int bSize);
-		long ip;
+		char userIp[50];
 		void operator=(const UserData &x);
 };
 
@@ -28,20 +28,24 @@ class ChatRoom{
 		void addNewUser();
 		void removeUser(int userSocket);
 		void listenUser(int id, int socket);// listen to one user
-		ChatRoom(unsigned short int port);
+		ChatRoom(unsigned short int port);//serverChatRoom
+		ChatRoom();//defalt ChatRoom
 		void acceptC();
 		bool hasSocket();
 		void closeRoom();
 		void kick(char* name);
-		void mute(char* name, bool state);
+		int getUserByName(char* name);
+		char roomName[50];
 	private:
 		void commands(char * buffer, int id);
 		int admSocket;
+		bool isMainServer;
 		UserData * users;
 		std::mutex roomMu;
 		std::mutex connectionMu;
 		int sockfd;
 		int waitingSocket;
+		char waitingIp[50];
 };
 
 

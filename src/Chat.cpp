@@ -2,6 +2,7 @@
 #include "Socket.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
 #include <netdb.h>
@@ -18,8 +19,11 @@ ChatRoom :: ChatRoom(unsigned short int port){
 		users[i].isConnected = false;
 	}
 
-
+	//starting values
 	waitingSocket = -1;
+	bzero(waitingIp,50);
+	isMainServer = true;
+
 	// create socket
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd == -1){
@@ -60,7 +64,19 @@ ChatRoom :: ChatRoom(unsigned short int port){
 	
 }
 
+ChatRoom :: ChatRoom(){
+	waitingSocket = -1;
+	bzero(waitingIp,50);
+	bzero(roomName,50);
+	isMainServer = false;
+}
+
 void ChatRoom::acceptC(){
+
+	if(!isMainServer){
+		std:: cout << "\n\rSERVER_LOG: ERRO; apenas o servidor principal pode aceitar novos clients" << std:: endl;
+		return ;
+	}
 
 	if(hasSocket())
 		return;
@@ -87,6 +103,11 @@ void ChatRoom::acceptC(){
 	std:: cout << "\n\rSERVER_LOG: ERRNO_A_ACCEPT: " << errno << std:: endl;
 	
 
+	//gera o ip do client na forma de string
+	char ipStr[50];
+	inet_ntop(AF_INET, (struct sockaddr*)&client.sin_addr, ipStr, 50);
+	strcpy(waitingIp, ipStr);
+
 	if(*newConnectionSocket == -1){
 		free(newConnectionSocket);
 		//Problem with client connecting
@@ -104,18 +125,28 @@ void ChatRoom::acceptC(){
 
 
 void ChatRoom:: whatsMyName(){
-	char name[99];
-
-	if(gethostname(name,99)!= 0){
-		std::cout << "I don't know my name."<< std::endl;
-		return;
+	if(isMainServer){
+		char name[99];
+		if(gethostname(name,99)!= 0){
+			std::cout << "I don't know my name."<< std::endl;
+			return;
+		}
+		std::cout << "My name is "<< name << std::endl;
 	}
-	std::cout << "My name is "<< name << std::endl;
+	else{
+		std::cout << "My name is "<< roomName << std::endl;
+	}
 }
 
 void ChatRoom :: addNewUser(){
 	if(!hasSocket())
 		return;
+
+	if(!isMainServer){
+		std:: cout << "\n\rSERVER_LOG: ERRO; apenas o servidor principal pode aceitar novos clients" << std:: endl;
+		return ;
+	}
+
 	if (userNum >= 0 && userNum < 20)
 	{
 		int newSocket = waitingSocket;
@@ -129,7 +160,11 @@ void ChatRoom :: addNewUser(){
 		sprintf(num, "%d", userNum);
 
 		strcat(newUser.userName,num);
-		
+
+		//seting ip
+		strcpy(newUser.userIp, waitingIp);
+		bzero(waitingIp,50);
+
 		//new user id
 		int newId = -1;
 
@@ -238,6 +273,9 @@ void ChatRoom :: listenUser(int id, int socket){
 
 	while(true){
 		if(poll(fds,1,3000) != 0){
+
+			bzero(buffer, 4096);
+
 			std:: cout << "\n\rSERVER_LOG: ERRNO_POLL: " << errno << std:: endl;
 			int bytesRecv = users[id].receive(buffer, 4096);
 
@@ -274,7 +312,7 @@ void ChatRoom :: listenUser(int id, int socket){
 				}
 				
 			}
-			bzero(buffer, 4096);
+			bzero(buffer,4096);
 		}
 	}
 	
@@ -312,7 +350,7 @@ void ChatRoom :: commands(char * buffer, int id){
 			
 		}
 	}
-	else if(strncmp(buffer,"/kick ",6)){
+	else if(strncmp(buffer,"/kick ",6) == 0){
 		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
@@ -330,13 +368,13 @@ void ChatRoom :: commands(char * buffer, int id){
 			kick(name);	
 		}
 	}
-	else if(strncmp(buffer,"/mute ",6)){
+	else if(strncmp(buffer,"/mute ",6) == 0){
 		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
 		}
-		std:: cout << "\n\rSERVER_LOG: Mute request de " << users[id].userName << std::endl;
+		
 		if(strlen(buffer) >  9){
 			char name[14];
 			int size = strlen(buffer) - 6;
@@ -345,34 +383,93 @@ void ChatRoom :: commands(char * buffer, int id){
 				name[i] = buffer[6 + i];
 			}
 			name[size] = '\0';
-			mute(name, false);	
+
+			std:: cout << "\n\rSERVER_LOG: Mute request de " << users[id].userName << " para " << name<< std::endl;
+			
+			//mute the client with the search name
+			int otherId = getUserByName(name);
+			if(otherId != -1){
+				users[otherId].canTalk = false;	
+				strcpy(buffer,"\n\rSERVER_LOG: Sucesso no processo de Mute");
+			}
+			else{
+				strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de Mute; Verifique se o nome do usuario esta correto");
+			}
+
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 		}
 
 	}
-	else if(strncmp(buffer,"/unmute ",8)){
+	else if(strncmp(buffer,"/unmute ",8) == 0){
 		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
 		}
-		std:: cout << "\n\rSERVER_LOG: UnMute request de " << users[id].userName << std::endl;
-		if(strlen(buffer) >  9){
+
+		if(strlen(buffer) >  8){
 			char name[14];
-			int size = strlen(buffer) - 6;
+			int size = strlen(buffer) - 8;
 			for (size_t i = 0; i < size; i++)
 			{
-				name[i] = buffer[6 + i];
+				name[i] = buffer[8 + i];
 			}
 			name[size] = '\0';
-			mute(name, true);	
+
+			std:: cout << "\n\rSERVER_LOG: UnMute request de " << users[id].userName << " para " << name<< std::endl;
+			//mute the client with the searched name
+			int otherId = getUserByName(name);
+			if(otherId != -1){
+				users[otherId].canTalk = true;
+				strcpy(buffer,"\n\rSERVER_LOG: Sucesso no processo de UnMute");
+			}
+			else
+				strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de UnMute; Verifique se o nome do usuario esta correto");
+			
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 		}
 	}
-	else if(strncmp(buffer,"/whois ",7)){
+	else if(strncmp(buffer,"/whois ",7) == 0){
 		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
 			return;
 		}
+		else{
+			if(strlen(buffer) >  7)
+			{
+				char name[14];
+				int size = strlen(buffer) - 7;
+				for (size_t i = 0; i < size; i++)
+				{
+					name[i] = buffer[7 + i];
+				}
+				name[size] = '\0';
+
+				std:: cout << "\n\rSERVER_LOG: whois request de " << users[id].userName << " para " << name<< std::endl;
+				//mute the client with the searched name
+				int otherId = getUserByName(name);
+				if(otherId != -1){
+
+					strcpy(buffer,"\n\rSERVER_LOG: O ip de ");
+					strcat(buffer, users[otherId].userName);
+					strcat(buffer," é ");
+					strcat(buffer,users[otherId].userIp);
+					strcat(buffer, ".\n");
+				}
+				else{
+					strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de Whois; Verifique se o nome do usuario esta correto");
+				}
+
+				//user feedback	
+				users[id].sendNewM(buffer,4096);
+			}	
+		}
+
+	}
+	else if(strcmp(buffer,"/help") == 0){
 
 	}
 	else{
@@ -391,22 +488,21 @@ void ChatRoom :: kick(char* name){
 	}
 }
 
-
-void ChatRoom :: mute(char* name, bool state){
+int  ChatRoom :: getUserByName(char* name){
 	for(int i = 0; i < 20; i++){
 		if(users[i].isConnected && (strcmp(users[i].userName, name) == 0)){
-			users[i].canTalk = state;
-			return;
+			return i;
 		}
 	}
+	return -1;
 }
-
 
 UserData::UserData(int newSocket){
 	isConnected = true;
 	hasError = false;
 	connectedSocket = newSocket;
 	canTalk = true;
+	bzero(userIp, 50);
 }
 
 void UserData :: setSocket(int socket){
@@ -425,7 +521,7 @@ UserData::UserData(const UserData &x){
 		userName[i] = x.userName[i];
 	}
 
-	ip = x.ip;
+	strcpy(userIp, x.userIp);
 	hasError = x.hasError;
 	isConnected = x.isConnected;
 	connectedSocket = x.connectedSocket;
@@ -454,7 +550,7 @@ void UserData::operator=(const UserData &x){
 		userName[i] = x.userName[i];
 	}
 
-	ip = x.ip;
+	strcpy(userIp, x.userIp);
 	hasError = x.hasError;
 	isConnected = x.isConnected;
 	connectedSocket = x.connectedSocket;
