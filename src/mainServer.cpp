@@ -216,11 +216,11 @@ void MainServer :: listenUser(int id, int sock){
                     strcpy(buffer, "\n\rSERVER_LOG: ERRO; não foi possivel se connectar/criar a sala desejada, tente novamente.");
                     waitingUsers[id].sendNewM(buffer,4096);
                 }
-                
-                strcpy(buffer,"Para se conectar utilize o comando /join seguido do nome da sala que gostaria de entrar.");
-                waitingUsers[id].sendNewM(buffer,4096);
-                sendChatRooms(id);
             }
+
+            strcpy(buffer,"Para se conectar utilize o comando /join seguido do nome da sala que gostaria de entrar.");
+            waitingUsers[id].sendNewM(buffer,4096);
+            sendChatRooms(id);
         }
     }
     
@@ -299,4 +299,25 @@ void MainServer :: sendChatRooms(int id){
     }
 }
 
+void MainServer :: verifyServer(){
+    int num = 0;
 
+    for(int i = 0; i < 20; i++){
+        if(rooms[i].userNum >= 0)
+            num++;
+    }
+    chatNum = num;
+
+    if(num <= 0 && waitingUserNum <= 0){
+        closeServer();
+    }
+}
+
+void MainServer :: closeServer(){
+    if(isOpen){
+        isOpen = false;
+        waitingUserNum = -1;
+        chatNum = -1;
+        close(sockfd);
+    }
+}

@@ -363,13 +363,21 @@ void ChatRoom :: commands(char * buffer, int id){
 		if(strlen(buffer) >  13){
 				//change name
 				int size = strlen(buffer) - 10;
-			if(size > 14)
-				size = 14;
+			if(size > 50)
+				size = 50;
 
 			for(int i = 0; i < size; i++)
 				users[id].userName[i] = buffer[i + 10];
 			users[id].userName[size] = '\0';
 			
+			strcpy(buffer, "\n\rSERVER_LOG: Sucesso no processo de alterar o nome do usuario.");
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
+		}
+		else{
+			
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 		}
 	}
 	else if(strncmp(buffer,"/kick ",6) == 0){
@@ -380,8 +388,12 @@ void ChatRoom :: commands(char * buffer, int id){
 		}
 		
 		if(strlen(buffer) >  9){
-			char name[14];
+			char name[50];
+			
 			int size = strlen(buffer) - 6;
+			if(size > 50)
+				size = 50;
+
 			for (size_t i = 0; i < size; i++)
 			{
 				name[i] = buffer[6 + i];
@@ -395,7 +407,14 @@ void ChatRoom :: commands(char * buffer, int id){
 			}else{
 				strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de kick; Verifique se o nome do usuario esta correto");
 			}
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 
+		}
+		else{
+			strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de kick; Verifique se o nome do usuario esta correto");
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 		}
 	}
 	else if(strncmp(buffer,"/mute ",6) == 0){
@@ -406,7 +425,11 @@ void ChatRoom :: commands(char * buffer, int id){
 		}
 		
 		if(strlen(buffer) >  9){
-			char name[14];
+			
+			char name[50];
+			if(size > 50)
+				size = 50;
+
 			int size = strlen(buffer) - 6;
 			for (size_t i = 0; i < size; i++)
 			{
@@ -429,6 +452,11 @@ void ChatRoom :: commands(char * buffer, int id){
 			//user feedback	
 			users[id].sendNewM(buffer,4096);
 		}
+		else{
+			strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de Mute; Verifique se o nome do usuario esta correto");
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
+		}
 
 	}
 	else if(strncmp(buffer,"/unmute ",8) == 0){
@@ -439,8 +467,12 @@ void ChatRoom :: commands(char * buffer, int id){
 		}
 
 		if(strlen(buffer) >  11){
-			char name[14];
+			char name[50];
 			int size = strlen(buffer) - 8;
+			
+			if(size > 50)
+				size = 50;
+			
 			for (size_t i = 0; i < size; i++)
 			{
 				name[i] = buffer[8 + i];
@@ -460,6 +492,11 @@ void ChatRoom :: commands(char * buffer, int id){
 			//user feedback	
 			users[id].sendNewM(buffer,4096);
 		}
+		else{
+			strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de UnMute; Verifique se o nome do usuario esta correto");
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
+		}
 	}
 	else if(strncmp(buffer,"/whois ",7) == 0){
 		if(!users[id].verifySocket(admSocket)){
@@ -470,8 +507,12 @@ void ChatRoom :: commands(char * buffer, int id){
 		else{
 			if(strlen(buffer) >  10)
 			{
-				char name[14];
+				char name[50];
 				int size = strlen(buffer) - 7;
+				
+				if(size > 50)
+				size = 50;
+
 				for (size_t i = 0; i < size; i++)
 				{
 					name[i] = buffer[7 + i];
@@ -495,7 +536,12 @@ void ChatRoom :: commands(char * buffer, int id){
 
 				//user feedback	
 				users[id].sendNewM(buffer,4096);
-			}	
+			}
+			else{
+				strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de Whois; Verifique se o nome do usuario esta correto");
+				//user feedback	
+				users[id].sendNewM(buffer,4096);
+			}
 		}
 
 	}

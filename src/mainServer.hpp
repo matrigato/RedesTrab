@@ -21,6 +21,7 @@ class MainServer{
         int newRoom(char * name);
         void removeWaitingUser(int id);
         void sendChatRooms(int id);
+        void verifyServer();
     private:
         int sockfd;
         bool isOpen;
@@ -28,11 +29,6 @@ class MainServer{
         ChatRoom * rooms;
         
 };
-
-
-
-
-
 
 
 #endif

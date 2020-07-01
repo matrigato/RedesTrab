@@ -7,7 +7,7 @@
 
 class UserData : public Socket{
 	public:	
-		char userName[14];
+		char userName[50];
 		bool canTalk;
 		UserData(int newSocket);
 		UserData(); // Only when going to be overwritten
