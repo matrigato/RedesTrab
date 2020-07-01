@@ -20,6 +20,7 @@ class MainServer{
         int getRoomByName(char * name);
         int newRoom(char * name);
         void removeWaitingUser(int id);
+        void sendChatRooms(int id);
     private:
         int sockfd;
         bool isOpen;

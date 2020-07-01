@@ -144,7 +144,8 @@ void MainServer :: listenUser(int id, int sock){
     //first message
     strcpy(buffer,"Para se conectar utilize o comando /join seguido do nome da sala que gostaria de entrar.");
     waitingUsers[id].sendNewM(buffer,4096);
-
+    sendChatRooms(id);
+    
     while (true)
     {
         if(poll(fds,1,3000) != 0){
@@ -190,9 +191,10 @@ void MainServer :: listenUser(int id, int sock){
 
                         //remove o usuario da fila de espera
                         removeWaitingUser(id);
-
-                        rooms[roomId].addUserFromServer(user, sock);
-                        break;
+                        if(rooms[roomId].userNum > -1 && rooms[roomId].userNum < 20 ){
+                            rooms[roomId].addUserFromServer(user, sock);
+                            break;
+                        }
 
                     }
                     else{
@@ -205,16 +207,19 @@ void MainServer :: listenUser(int id, int sock){
 
                             //remove o usuario da fila de espera
                             removeWaitingUser(id);
+
+                            rooms[roomId].addUserFromServer(user, sock);
+                            break;
                         }
                     }
 
-                }
-                else{
-                    strcpy(buffer,"Para se conectar utilize o comando /join seguido do nome da sala que gostaria de entrar.");
+                    strcpy(buffer, "\n\rSERVER_LOG: ERRO; não foi possivel se connectar/criar a sala desejada, tente novamente.");
                     waitingUsers[id].sendNewM(buffer,4096);
                 }
                 
-                
+                strcpy(buffer,"Para se conectar utilize o comando /join seguido do nome da sala que gostaria de entrar.");
+                waitingUsers[id].sendNewM(buffer,4096);
+                sendChatRooms(id);
             }
         }
     }
@@ -265,4 +270,33 @@ void MainServer :: removeWaitingUser(int id){
     waitingUserNum--;
 
 }
+
+//manda para o usuario indicado pelo id as sala que estão sendo utilizadas no momento
+void MainServer :: sendChatRooms(int id){
+    
+    char buffer[4096];
+    bzero(buffer, 4096);
+
+    if(chatNum > 0){
+        strcpy(buffer,"\nSalas abertas:");
+        for (int i = 0; i < 20; i++)
+        {
+            if(rooms[i].userNum >= 0){
+
+                strcat(buffer,"\n\t");
+                strcat(buffer,rooms[i].roomName);
+            }
+        }
+
+        strcat(buffer,"\n");
+        
+        //send to user
+        waitingUsers[id].sendNewM(buffer,4096);
+    }
+    else if( chatNum == 0){
+        strcpy(buffer, "\nNão temos nenhuma sala no momento; você pode criar a sua própria sala utilizando o comando /join");
+        waitingUsers[id].sendNewM(buffer,4096);
+    }
+}
+
 
