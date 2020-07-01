@@ -154,11 +154,19 @@ void MainServer :: listenUser(int id, int sock){
 
             if(bytesRecv == -1){
 				std::cerr << "\n\rSERVER_LOG: There was a connection issue with an user" << std::endl;
+                
+                //remove o usuario da fila de espera
+                waitingUsers[id].closeSocket();
+                removeWaitingUser(id);
 				break;
 			}
 			else if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
 				
 				std::cout << "\n\rSERVER_LOG: One user disconnected" << std::endl;
+                
+                //remove o usuario da fila de espera
+                waitingUsers[id].closeSocket();
+                removeWaitingUser(id);
 				break;
 			}
             else if(strncmp(buffer, "/join ",6) == 0){
@@ -181,14 +189,23 @@ void MainServer :: listenUser(int id, int sock){
                         UserData user = waitingUsers[id];
 
                         //remove o usuario da fila de espera
-                        
+                        removeWaitingUser(id);
+
+                        rooms[roomId].addUserFromServer(user, sock);
+                        break;
+
                     }
                     else{
 
                         roomId = newRoom(roomName);
-                        std::cout << "\n\rSERVER_LOG: um usuario esta criou a sala "<< rooms[roomId].roomName << std::endl;
-                        //adiciona o usuario na sala
-                        UserData user = waitingUsers[id];
+                        if(roomId != -1){
+                            std::cout << "\n\rSERVER_LOG: um usuario esta criou a sala "<< rooms[roomId].roomName << std::endl;
+                            //adiciona o usuario na sala
+                            UserData user = waitingUsers[id];
+
+                            //remove o usuario da fila de espera
+                            removeWaitingUser(id);
+                        }
                     }
 
                 }

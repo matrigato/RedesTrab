@@ -129,7 +129,6 @@ void ChatRoom::acceptC(){
 	return ;
 }
 
-
 void ChatRoom:: whatsMyName(){
 	if(isMainServer){
 		char name[99];
@@ -195,8 +194,21 @@ void ChatRoom :: addNewUser(){
 	}
 }
 
-void ChatRoom :: addUserFromServer(UserData newUser){
-	
+void ChatRoom :: addUserFromServer(UserData newUser, int sock){
+
+	if(userNum != -1 && userNum < 20){
+		int pos;
+		for(int i = 0; i < 20; i++){
+			if(!users[i].isConnected){
+				users[i] = newUser;
+				userNum++;
+				pos = i;
+			}
+		}
+
+		//inicia a troca de mensagens com o user
+		listenUser(pos,sock);
+	}
 }
 
 bool ChatRoom::hasSocket(){
@@ -528,7 +540,7 @@ int  ChatRoom :: getUserByName(char* name){
 	return -1;
 }
 
-UserData::UserData(int newSocket){
+UserData :: UserData(int newSocket){
 	isConnected = true;
 	hasError = false;
 	connectedSocket = newSocket;
@@ -539,7 +551,6 @@ UserData::UserData(int newSocket){
 void UserData :: setSocket(int socket){
 	connectedSocket = socket;
 }
-
 
 UserData::UserData(){
 	isConnected = false;
