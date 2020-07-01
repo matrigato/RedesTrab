@@ -26,6 +26,7 @@ class ChatRoom{
 		void sendUserM(int userSocket, char * mesage); //mesage from user to all the other users
 		void whatsMyName();
 		void addNewUser();
+		void addUserFromServer(UserData newUser);
 		void removeUser(int userSocket);
 		void listenUser(int id, int socket);// listen to one user
 		ChatRoom(unsigned short int port);//serverChatRoom

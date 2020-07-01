@@ -73,6 +73,7 @@ MainServer :: MainServer (unsigned short int port){
     isOpen = true;
 }
 
+//imprime na tela o nome do servidor
 void MainServer :: whatsMyName(){
     char name[99];
 	if(gethostname(name,99)!= 0){
@@ -105,13 +106,146 @@ void MainServer :: acceptC(){
 	newConnectionSocket = accept(sockfd, (struct sockaddr*) &client, &clientSize); // new socket number
 	std:: cout << "\n\rSERVER_LOG: ERRNO_A_ACCEPT: " << errno << std:: endl;
 	
-
-	//gera o ip do client na forma de string
-	char ipStr[50];
-	inet_ntop(AF_INET, (struct sockaddr*)&client.sin_addr, ipStr, 50);
+    //verifica se teve algum problema no accept e continua o processo   
     if(newConnectionSocket != -1){
+        
+        //gera o ip do client na forma de string
+        char ipStr[50];
+        inet_ntop(AF_INET, (struct sockaddr*)&client.sin_addr, ipStr, 50);
+
         UserData newUser(newConnectionSocket);
         strcpy(newUser.userIp,ipStr);
-        //chamar listen
+        
+        setUserToWaiting(newUser, newConnectionSocket);
     }
 }
+
+//adiciona o novo usuario e se prepara para receber/enviar mensagens 
+void MainServer :: setUserToWaiting(UserData user, int sock){
+    int pos;
+    for(int i = 0; i < 20; i++){
+        if(!waitingUsers[i].isConnected){
+            waitingUsers[i] = user;
+            pos = i;
+            break;
+        }
+    }
+
+    listenUser(pos,sock);
+}
+
+void MainServer :: listenUser(int id, int sock){
+    char buffer[4096];
+	struct pollfd fds[1];
+	fds[0].fd = sock;
+	fds[0].events = 0;
+	fds[0].events |= POLLIN;
+
+    //first message
+    strcpy(buffer,"Para se conectar utilize o comando /join seguido do nome da sala que gostaria de entrar.");
+    waitingUsers[id].sendNewM(buffer,4096);
+
+    while (true)
+    {
+        if(poll(fds,1,3000) != 0){
+            bzero(buffer,4096);
+
+            int bytesRecv = waitingUsers[id].receive(buffer, 4096);
+
+            if(bytesRecv == -1){
+				std::cerr << "\n\rSERVER_LOG: There was a connection issue with an user" << std::endl;
+				break;
+			}
+			else if(bytesRecv == 0 || strcmp(buffer,"/quit")==0){
+				
+				std::cout << "\n\rSERVER_LOG: One user disconnected" << std::endl;
+				break;
+			}
+            else if(strncmp(buffer, "/join ",6) == 0){
+                
+                int size = strlen(buffer);
+                if (size > 6)
+                {
+                    //get the room name
+                    char roomName[50];
+                    for (size_t i = 0; i < size - 6; i++)
+                    {
+                        roomName[i] = buffer[i + 6];
+                    }
+                    //verify name
+                    int roomId = getRoomByName(roomName);
+                    if(roomId != -1){                        
+                        
+                        std::cout << "\n\rSERVER_LOG: um usuario esta entrando na sala "<< rooms[roomId].roomName << std::endl;
+                        //adiciona o usuario na sala
+                        UserData user = waitingUsers[id];
+
+                        //remove o usuario da fila de espera
+                        
+                    }
+                    else{
+
+                        roomId = newRoom(roomName);
+                        std::cout << "\n\rSERVER_LOG: um usuario esta criou a sala "<< rooms[roomId].roomName << std::endl;
+                        //adiciona o usuario na sala
+                        UserData user = waitingUsers[id];
+                    }
+
+                }
+                else{
+                    strcpy(buffer,"Para se conectar utilize o comando /join seguido do nome da sala que gostaria de entrar.");
+                    waitingUsers[id].sendNewM(buffer,4096);
+                }
+                
+                
+            }
+        }
+    }
+    
+}
+
+//procura uma sala com nome name, retorna o id da sala ou -1
+int MainServer :: getRoomByName(char * name){
+    if(chatNum <= 0)
+        return -1;
+    
+    for (int  i = 0; i < 20; i++)
+    {
+        if(strcmp(name, rooms[i].roomName) == 0 && rooms[i].userNum > -1)
+            return i;
+    }
+
+    return -1;
+}
+
+//cria uma nova sala com o nome name, retorna o id da sala ou -1
+int MainServer :: newRoom(char * name){
+    //cant creat a new room
+    if(chatNum >= 20)
+        return -1;
+
+    //create a new room
+    for (int  i = 0; i < 20; i++)
+    {
+        if(rooms[i].userNum == -1){
+            rooms[i] = ChatRoom();
+            strcpy(rooms[i].roomName, name);
+            chatNum++;
+            return i;
+        }
+    }
+
+    //error
+    return -1;
+}
+
+//remove o usuario na posicao id
+void MainServer :: removeWaitingUser(int id){
+    
+    //remove o usuario anterior e fica pronto para receber um novo
+    waitingUsers[id] = UserData();
+	waitingUsers[id].isConnected = false;
+    waitingUserNum--;
+
+}
+

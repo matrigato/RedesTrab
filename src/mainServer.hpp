@@ -8,18 +8,23 @@
 
 class MainServer{
     public:
-        UserData * waitingUsers;
-        ChatRoom * rooms;
+        
         MainServer(unsigned short int port);
         void acceptC();
-        void listenUser(UserData user);
+        void listenUser(int id, int sock);
         void closeServer();
         void whatsMyName();
+        void setUserToWaiting(UserData user, int sock);
         int chatNum = 0;
         int waitingUserNum = 0;
+        int getRoomByName(char * name);
+        int newRoom(char * name);
+        void removeWaitingUser(int id);
     private:
         int sockfd;
         bool isOpen;
+        UserData * waitingUsers;
+        ChatRoom * rooms;
         
 };
 

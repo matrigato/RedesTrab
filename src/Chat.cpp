@@ -195,6 +195,10 @@ void ChatRoom :: addNewUser(){
 	}
 }
 
+void ChatRoom :: addUserFromServer(UserData newUser){
+	
+}
+
 bool ChatRoom::hasSocket(){
 	std::lock_guard<std::mutex> locker(connectionMu);
 	return waitingSocket != -1 ?true : false;
