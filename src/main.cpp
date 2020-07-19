@@ -5,6 +5,7 @@
 #include <string.h>
 #include <thread>
 #include <signal.h>
+#include "mainServer.hpp"
 
 #define PORT 54005
 
@@ -26,6 +27,24 @@ void chat_server_routine(){
 				threadVector.push_back(std::thread(&ChatRoom::addNewUser, &chat));
 		}
 	}
+
+	for (size_t i = 0; i < threadVector.size(); i++)
+	{
+		threadVector[i].join();
+	}
+}
+
+void main_server_routine(){
+	MainServer server(PORT);
+	std::vector<std::thread> threadVector;
+	
+	while (server.isOpen)
+	{
+		threadVector.push_back(std::thread(&MainServer::acceptC, &server));
+		
+		server.verifyServer();
+	}
+	
 
 	for (size_t i = 0; i < threadVector.size(); i++)
 	{

@@ -36,14 +36,15 @@ class ChatRoom{
 		void closeRoom();
 		int getUserByName(char* name);
 		char roomName[50];
-	private:
-		void commands(char * buffer, int id);
+		void operator=(const ChatRoom &x);
+		int sockfd;
 		int admSocket;
 		bool isMainServer;
 		UserData * users;
+	private:
+		void commands(char * buffer, int id);
 		std::mutex roomMu;
 		std::mutex connectionMu;
-		int sockfd;
 		int waitingSocket;
 		char waitingIp[50];
 };

@@ -634,7 +634,7 @@ bool UserData :: verifySocket(int otherSocket){
 
 void UserData::operator=(const UserData &x){
 	
-	for(int i = 0; i < 14; i++){
+	for(int i = 0; i < 50; i++){
 		userName[i] = x.userName[i];
 	}
 
@@ -642,4 +642,21 @@ void UserData::operator=(const UserData &x){
 	hasError = x.hasError;
 	isConnected = x.isConnected;
 	connectedSocket = x.connectedSocket;
+}
+
+void ChatRoom :: operator=(const ChatRoom &x){
+	for (size_t i = 0; i < 50; i++)
+	{
+		roomName[i] = x.roomName[i];
+	}
+
+	userNum = x.userNum;
+	for (size_t i = 0; i < 20; i++)
+	{
+		users[i] = x.users[i];
+	}
+	
+	sockfd = x.sockfd;
+	admSocket = x.admSocket;
+	isMainServer = x.isMainServer;
 }

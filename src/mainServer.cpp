@@ -268,6 +268,8 @@ void MainServer :: removeWaitingUser(int id){
     waitingUsers[id] = UserData();
 	waitingUsers[id].isConnected = false;
     waitingUserNum--;
+    
+    verifyServer();
 
 }
 
@@ -300,6 +302,8 @@ void MainServer :: sendChatRooms(int id){
 }
 
 void MainServer :: verifyServer(){
+    if(!isOpen)
+    return;
     int num = 0;
 
     for(int i = 0; i < 20; i++){

@@ -22,12 +22,11 @@ class MainServer{
         void removeWaitingUser(int id);
         void sendChatRooms(int id);
         void verifyServer();
+        bool isOpen;
     private:
         int sockfd;
-        bool isOpen;
         UserData * waitingUsers;
         ChatRoom * rooms;
-        
 };
 
 
