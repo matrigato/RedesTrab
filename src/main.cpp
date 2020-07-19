@@ -34,6 +34,7 @@ void chat_server_routine(){
 }
 
 void main_server_routine(){
+
 	MainServer server(PORT);
 	std::vector<std::thread> threadVector;
 	
@@ -41,14 +42,14 @@ void main_server_routine(){
 	{
 		threadVector.push_back(std::thread(&MainServer::acceptC, &server));
 		
-		server.verifyServer();
+		server.verifyServer();//verifica se ainda temos usuarios no servidor
 	}
 	
-
 	for (size_t i = 0; i < threadVector.size(); i++)
 	{
 		threadVector[i].join();
 	}
+
 }
 
 void server_rotine(){
@@ -119,6 +120,10 @@ int main(){
 			server_rotine();
 		}else if(select.compare("/setroom") == 0){
 			chat_server_routine();
+		}
+		else if (select.compare("/openserver") == 0)
+		{
+			main_server_routine();
 		}else if(select.compare("/quit") == 0){
 			std::cout << "Saindo..." << std::endl;
 		}else{
