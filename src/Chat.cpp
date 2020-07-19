@@ -390,21 +390,22 @@ void ChatRoom :: commands(char * buffer, int id){
 		if(strlen(buffer) >  9){
 			char name[50];
 			
-			int size = strlen(buffer) - 6;
-			if(size > 50)
-				size = 50;
+			int sizeb = strlen(buffer) - 6;
+			if(sizeb > 50)
+				sizeb = 50;
 
-			for (size_t i = 0; i < size; i++)
+			for (int i = 0; i < sizeb; i++)
 			{
 				name[i] = buffer[6 + i];
 			}
-			name[size] = '\0';
+			name[sizeb] = '\0';
 			std:: cout << "\n\rSERVER_LOG: Kick request de " << users[id].userName << " para "<< name << std::endl;
 			int otherId = getUserByName(name);
 			if(otherId != -1){
 				removeUser(users[otherId].connectedSocket);
 				strcpy(buffer,"\n\rSERVER_LOG: Sucesso no processo de Kick");	
-			}else{
+			}
+			else{
 				strcpy(buffer,"\n\rSERVER_LOG: Falha no processo de kick; Verifique se o nome do usuario esta correto");
 			}
 			//user feedback	
@@ -426,15 +427,18 @@ void ChatRoom :: commands(char * buffer, int id){
 		
 		if(strlen(buffer) >  9){
 			
+			int size = strlen(buffer) - 6;
+			
 			char name[50];
+
 			if(size > 50)
 				size = 50;
 
-			int size = strlen(buffer) - 6;
-			for (size_t i = 0; i < size; i++)
+			for (int i = 0; i < size; i++)
 			{
 				name[i] = buffer[6 + i];
 			}
+
 			name[size] = '\0';
 
 			std:: cout << "\n\rSERVER_LOG: Mute request de " << users[id].userName << " para " << name<< std::endl;
@@ -473,7 +477,7 @@ void ChatRoom :: commands(char * buffer, int id){
 			if(size > 50)
 				size = 50;
 			
-			for (size_t i = 0; i < size; i++)
+			for (int i = 0; i < size; i++)
 			{
 				name[i] = buffer[8 + i];
 			}
@@ -513,7 +517,7 @@ void ChatRoom :: commands(char * buffer, int id){
 				if(size > 50)
 				size = 50;
 
-				for (size_t i = 0; i < size; i++)
+				for (int i = 0; i < size; i++)
 				{
 					name[i] = buffer[7 + i];
 				}

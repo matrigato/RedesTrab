@@ -1,7 +1,7 @@
-all: testeCli_o Socket_o Chat_o teste_o main_o
+all: testeCli_o Socket_o Chat_o teste_o main_o Server_o
 	g++ Socket.o testeCli.o -g -std=c++11 -lpthread -Wall -o client
 	g++ Socket.o test.o -g -std=c++11 -lpthread -Wall -o server
-	g++ Socket.o Chat.o main.o -g -pthread -std=c++11 -lpthread -Wall -o main
+	g++ Socket.o Chat.o mainServer.o main.o -g -pthread -std=c++11 -lpthread -Wall -o main
 
 main_o: main.cpp Socket.hpp
 	g++ -c main.cpp -g -pthread -std=c++11 -lpthread -Wall -Wextra
@@ -17,6 +17,9 @@ Socket_o: Socket.cpp Socket.hpp
 
 Chat_o: Chat.cpp Chat.hpp
 	g++ -c Chat.cpp -g -pthread -std=c++11 -lpthread -Wall -Wextra
+
+Server_o: mainServer.cpp mainServer.hpp
+	g++ -c mainServer.cpp -g -pthread -std=c++11 -lpthread -Wall -Wextra
 
 run_client: client
 	./client

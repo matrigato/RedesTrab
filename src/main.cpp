@@ -1,12 +1,11 @@
 #include "Socket.hpp"
 #include "Chat.hpp"
+#include "mainServer.hpp"
 #include <iostream>
 #include <string>
 #include <string.h>
 #include <thread>
 #include <signal.h>
-#include "mainServer.hpp"
-
 #define PORT 54005
 
 

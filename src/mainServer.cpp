@@ -177,7 +177,7 @@ void MainServer :: listenUser(int id, int sock){
                 {
                     //get the room name
                     char roomName[50];
-                    for (size_t i = 0; i < size - 6; i++)
+                    for (int i = 0; i < size - 6; i++)
                     {
                         roomName[i] = buffer[i + 6];
                     }
@@ -302,19 +302,23 @@ void MainServer :: sendChatRooms(int id){
 }
 
 void MainServer :: verifyServer(){
+   
     if(!isOpen)
-    return;
+        return;
+
     int num = 0;
 
     for(int i = 0; i < 20; i++){
         if(rooms[i].userNum >= 0)
             num++;
     }
+    
     chatNum = num;
 
     if(num <= 0 && waitingUserNum <= 0){
         closeServer();
     }
+
 }
 
 void MainServer :: closeServer(){
