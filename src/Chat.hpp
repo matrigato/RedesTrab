@@ -50,5 +50,4 @@ class ChatRoom{
 		char waitingIp[50];
 };
 
-
 #endif
