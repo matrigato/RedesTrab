@@ -67,17 +67,20 @@ void server_rotine(){
 void client_rotine(){
 	//recives user name
 	std::cout << "User Name: ";
-	char userName[99];
+	char userName[50];
+	bzero(userName,50);
 	std::cin >> userName;
 	std::cin.ignore();
 
 	//recives server name
 	std::cout << "Server Name: ";
 	char serverName[99];
+	bzero(serverName,99);
 	std::cin >> serverName;
 	std::cin.ignore();
 	
-	char initMessage[] = "client is trying to say something to the server";
+	char initMessage[99] = "/start \0";
+	strcat(initMessage,userName);
 	ClientSocket client(PORT, serverName);
 	
 	std::cout << "tentando se conectar com o servidor " << serverName << "...";

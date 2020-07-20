@@ -148,6 +148,12 @@ void MainServer :: listenUser(int id, int sock){
     strcpy(buffer,"Para se conectar utilize o comando /join seguido do nome da sala que gostaria de entrar.");
     waitingUsers[id].sendNewM(buffer,4096);
     sendChatRooms(id);
+    //recive user name
+    int Recv = waitingUsers[id].receive(buffer, 4096);
+    if(strncmp(buffer,"/start ",7)==0){
+        for (size_t i = 0; i < 50; i++)
+            waitingUsers[id].userName[i] = buffer[i+7];
+    }
     
     while (true)
     {
@@ -211,9 +217,7 @@ void MainServer :: listenUser(int id, int sock){
 
                             //remove o usuario da fila de espera
                             removeWaitingUser(id);
-                            rooms[roomId].users[0] = user;
-                            rooms[roomId].listenUser(0,sock);
-                            //rooms[roomId].addUserFromServer(user, sock);
+                            rooms[roomId].addUserFromServer(user, sock);
                             break;
                         }
                     }

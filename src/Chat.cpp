@@ -203,6 +203,9 @@ void ChatRoom :: addUserFromServer(UserData newUser, int sock){
 				(users[i]) = newUser;
 				userNum++;
 				pos = i;
+				if (userNum == 1)
+					admSocket = sock;
+				
 				break;
 			}
 		}
@@ -313,6 +316,7 @@ void ChatRoom :: listenUser(int id, int socket){
 
 			}
 			else if(buffer[0] == '/'){ //um comando esta sendo chamado
+				
 				commands(buffer, id);
 			}
 			else{
@@ -361,7 +365,7 @@ void ChatRoom :: commands(char * buffer, int id){
 		std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << users[id].userName << std::endl;
 
 		//verify if there is a name
-		if(strlen(buffer) >  13){
+		if(strlen(buffer) >  10){
 				//change name
 				int size = strlen(buffer) - 10;
 			if(size > 50)
@@ -382,23 +386,24 @@ void ChatRoom :: commands(char * buffer, int id){
 		}
 	}
 	else if(strncmp(buffer,"/kick ",6) == 0){
+		
 		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 			return;
 		}
-		
-		if(strlen(buffer) >  9){
+		if(strlen(buffer) >  6){
 			char name[50];
 			
-			int sizeb = strlen(buffer) - 6;
-			if(sizeb > 50)
-				sizeb = 50;
+			int sizeb = 50;
 
-			for (int i = 0; i < sizeb; i++)
+			for (int i = 0; i < 50; i++)
 			{
 				name[i] = buffer[6 + i];
 			}
+			printf("\nkick em : %s\n", name);
 			name[sizeb] = '\0';
 			std:: cout << "\n\rSERVER_LOG: Kick request de " << users[id].userName << " para "<< name << std::endl;
 			int otherId = getUserByName(name);
@@ -423,17 +428,16 @@ void ChatRoom :: commands(char * buffer, int id){
 		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 			return;
 		}
 		
-		if(strlen(buffer) >  9){
+		if(strlen(buffer) >  6){
 			
-			int size = strlen(buffer) - 6;
+			int size = 50;
 			
 			char name[50];
-
-			if(size > 50)
-				size = 50;
 
 			for (int i = 0; i < size; i++)
 			{
@@ -468,15 +472,14 @@ void ChatRoom :: commands(char * buffer, int id){
 		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 			return;
 		}
 
-		if(strlen(buffer) >  11){
+		if(strlen(buffer) >  8){
 			char name[50];
-			int size = strlen(buffer) - 8;
-			
-			if(size > 50)
-				size = 50;
+			int size = 50;
 			
 			for (int i = 0; i < size; i++)
 			{
@@ -507,16 +510,16 @@ void ChatRoom :: commands(char * buffer, int id){
 		if(!users[id].verifySocket(admSocket)){
 			//o usuario não pode usar o comando
 			strcpy(buffer, "Server: comando invalido.");
+			//user feedback	
+			users[id].sendNewM(buffer,4096);
 			return;
 		}
 		else{
-			if(strlen(buffer) >  10)
+			if(strlen(buffer) >  7)
 			{
 				char name[50];
-				int size = strlen(buffer) - 7;
+				int size = 50;
 				
-				if(size > 50)
-				size = 50;
 
 				for (int i = 0; i < size; i++)
 				{

@@ -39,7 +39,7 @@ class ChatRoom{
 		char roomName[50];
 		void operator=(const ChatRoom &x);
 		int sockfd;
-		int admSocket;
+		int admSocket = -1;
 		bool isMainServer;
 		UserData * users;
 	private:
