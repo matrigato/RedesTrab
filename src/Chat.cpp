@@ -199,7 +199,7 @@ void ChatRoom :: addUserFromServer(UserData newUser, int sock){
 	if(userNum != -1 && userNum < 20){
 		int pos;
 		for(int i = 0; i < 20; i++){
-			if(!users[i].isConnected){
+			if(!(&users[i])->isConnected){
 				users[i] = newUser;
 				userNum++;
 				pos = i;
