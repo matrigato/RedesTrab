@@ -50,32 +50,5 @@ class ChatRoom{
 		char waitingIp[50];
 };
 
-class MainServer{
-    public:
-        
-        MainServer(unsigned short int port);
-        void acceptC();
-        void listenUser(int id, int sock);
-        void closeServer();
-        void whatsMyName();
-        void setUserToWaiting(UserData user, int sock);
-        int chatNum = 0;
-        int waitingUserNum = 0;
-        int getRoomByName(char * name);
-        int newRoom(char * name);
-        void removeWaitingUser(int id);
-        void sendChatRooms(int id);
-        void verifyServer();
-        void startUser();
-        bool isOpen;
-        int tempUser = -1;
-        ChatRoom * rooms;
-    private:
-        int sockfd;
-        UserData * waitingUsers;
-        char tempIp[50];
-
-};
-
 
 #endif
