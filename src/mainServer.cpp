@@ -17,15 +17,14 @@ MainServer :: MainServer (unsigned short int port){
     isOpen = false;
     
     //prepara os usuarios em espera
-    waitingUsers = (UserData*)malloc(sizeof(UserData) * 5);
-	for(int i = 0; i < 5; i++){
+    waitingUsers = (UserData*)malloc(sizeof(UserData) * 20);
+	for(int i = 0; i < 20; i++){
 		waitingUsers[i] = UserData();
 		waitingUsers[i].isConnected = false;
 	}
 
     //prepara as salas
-    rooms = (ChatRoom*)malloc(sizeof(UserData) * 20);
-    for (size_t i = 0; i < 20; i++)
+    for (size_t i = 0; i < 5; i++)
     {   
         rooms[i] = ChatRoom();
         rooms[i].userNum = -1;
@@ -237,7 +236,7 @@ int MainServer :: getRoomByName(char * name){
     if(chatNum <= 0)
         return -1;
     
-    for (int  i = 0; i < 20; i++)
+    for (int  i = 0; i < 5; i++)
     {
         if(strcmp(name, rooms[i].roomName) == 0 && rooms[i].userNum > -1)
             return i;
@@ -287,7 +286,7 @@ void MainServer :: sendChatRooms(int id){
 
     if(chatNum > 0){
         strcpy(buffer,"\nSalas abertas:");
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 5; i++)
         {
             if(rooms[i].userNum >= 0){
 

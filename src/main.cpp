@@ -1,5 +1,6 @@
 #include "Socket.hpp"
 #include "Chat.hpp"
+#include "mainServer.hpp"
 #include <iostream>
 #include <string>
 #include <string.h>
