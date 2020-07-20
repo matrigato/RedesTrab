@@ -186,40 +186,72 @@ void MainServer :: listenUser(int id, int sock){
                 {
                     //get the room name
                     char roomName[50];
-                    for (int i = 0; i < size - 6; i++)
+                    int i;
+                    for (i = 0; i < size - 6; i++)
                     {
                         roomName[i] = buffer[i + 6];
                     }
-                    //verify name
-                    int roomId = getRoomByName(roomName);
-                    if(roomId != -1){                        
-                        
-                        std::cout << "\n\rSERVER_LOG: um usuario esta entrando na sala "<< rooms[roomId].roomName << std::endl;
-                        //adiciona o usuario na sala
-                        UserData user = waitingUsers[id];
+                    roomName[i] = '\0';
 
-                        //remove o usuario da fila de espera
-                        removeWaitingUser(id);
-                        if(rooms[roomId].userNum > -1 && rooms[roomId].userNum < 20 ){
-                            rooms[roomId].addUserFromServer(user, sock);
-                            break;
-                        }
-
+                    //verify allowed name
+                    bool allowed = true;
+                    if(roomName[0] != '&' && roomName[0] != '#'){
+                        strcpy(buffer,"O nome do canal deve começar com # ou &.");
+                        allowed = false;
                     }
-                    else{
+                    for(i = 1; roomName[i] != '\0'; i++){
+                        if(!allowed) break;
+                        switch(roomName[i]){
+                            case ' ':
+                                strcpy(buffer,"Espaços não são permitidos no nome do canal.");
+                                allowed = false;
+                                break;
+                            case ',':
+                                strcpy(buffer,"Vírgulas não são permitidas no nome do canal.");
+                                allowed = false;
+                                break;
+                            case 7:
+                                strcpy(buffer,"Control G não é permitido no nome do canal.");
+                                allowed = false;
+                                break;
+                        }
+                    }
 
-                        roomId = newRoom(roomName);
-                        if(roomId != -1){
+                    if(allowed){
+                        //verify repeated name
+                        int roomId = getRoomByName(roomName);
+                        if(roomId != -1){                        
                             
-                            std::cout << "\n\rSERVER_LOG: um usuario esta criou a sala "<< rooms[roomId].roomName << std::endl;
+                            std::cout << "\n\rSERVER_LOG: um usuario esta entrando na sala "<< rooms[roomId].roomName << std::endl;
                             //adiciona o usuario na sala
                             UserData user = waitingUsers[id];
 
                             //remove o usuario da fila de espera
                             removeWaitingUser(id);
-                            rooms[roomId].addUserFromServer(user, sock);
-                            break;
+                            if(rooms[roomId].userNum > -1 && rooms[roomId].userNum < 20 ){
+                                rooms[roomId].addUserFromServer(user, sock);
+                                break;
+                            }
+
                         }
+                        else{
+
+                            roomId = newRoom(roomName);
+                            if(roomId != -1){
+                                
+                                std::cout << "\n\rSERVER_LOG: um usuario criou a sala "<< rooms[roomId].roomName << std::endl;
+                                //adiciona o usuario na sala
+                                UserData user = waitingUsers[id];
+
+                                //remove o usuario da fila de espera
+                                removeWaitingUser(id);
+                                rooms[roomId].addUserFromServer(user, sock);
+                                break;
+                            }
+                        }
+                    }
+                    else{
+                        waitingUsers[id].sendNewM(buffer,4096);
                     }
 
                     strcpy(buffer, "\n\rSERVER_LOG: ERRO; não foi possivel se connectar/criar a sala desejada, tente novamente.");
