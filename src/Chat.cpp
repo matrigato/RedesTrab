@@ -203,6 +203,7 @@ void ChatRoom :: addUserFromServer(UserData newUser, int sock){
 				(users[i]) = newUser;
 				userNum++;
 				pos = i;
+				break;
 			}
 		}
 

@@ -41,8 +41,7 @@ void main_server_routine(){
 	while (server.isOpen)// parametro, n tem a ver com o ternario
 	{
 		server.acceptC();
-		printf("\n%d\n", server.waitingUserNum);
-
+		
 		if(server.tempUser != -1)
 			threadVector.push_back(std::thread(&MainServer::startUser, &server));
 		
