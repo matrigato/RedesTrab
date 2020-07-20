@@ -1,6 +1,5 @@
 #include "Socket.hpp"
 #include "Chat.hpp"
-#include "mainServer.hpp"
 #include <iostream>
 #include <string>
 #include <string.h>
@@ -38,11 +37,15 @@ void main_server_routine(){
 	MainServer server(PORT);
 	std::vector<std::thread> threadVector;
 	
-	while (server.isOpen)
+	while (server.isOpen)// parametro, n tem a ver com o ternario
 	{
-		threadVector.push_back(std::thread(&MainServer::acceptC, &server));
+		server.acceptC();
+		printf("\n%d\n", server.waitingUserNum);
+
+		if(server.tempUser != -1)
+			threadVector.push_back(std::thread(&MainServer::startUser, &server));
 		
-		server.verifyServer();//verifica se ainda temos usuarios no servidor
+		//server.verifyServer();//verifica se ainda temos usuarios no servidor
 	}
 	
 	for (size_t i = 0; i < threadVector.size(); i++)
@@ -96,6 +99,7 @@ void menu(){
 	std::cout << "\t/host - Entrar como um usuario host." << std::endl;
 	std::cout << "\t/setroom - Iniciar um servidor de uma ChatRoom." << std::endl;
 	std::cout << "\t/connect - Entrar como Client em uma chatRoom ou se comunicar com um usuario host." << std::endl;
+	std::cout << "\t/openserver - Criar um servidor com multiplas ChatRooms" << std::endl;
 	std::cout << "\t/quit - Sair." << std::endl;
 }
 

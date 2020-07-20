@@ -2,9 +2,16 @@
 #define REDESTRAB_MAIN_SERVER_SYST_HPP
 #include "Socket.hpp"
 #include "Chat.hpp"
-#include <vector> 
-#include <mutex>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#include <netdb.h>
+#include <iostream>
 #include <thread>
+#include <vector> 
+#include <poll.h>
 
 class MainServer{
     public:
@@ -22,11 +29,15 @@ class MainServer{
         void removeWaitingUser(int id);
         void sendChatRooms(int id);
         void verifyServer();
+        void startUser();
         bool isOpen;
+        int tempUser = -1;
+        ChatRoom * rooms;
     private:
         int sockfd;
         UserData * waitingUsers;
-        ChatRoom * rooms;
+        char tempIp[50];
+
 };
 
 

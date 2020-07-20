@@ -17,8 +17,8 @@ MainServer :: MainServer (unsigned short int port){
     isOpen = false;
     
     //prepara os usuarios em espera
-    waitingUsers = (UserData*)malloc(sizeof(UserData) * 20);
-	for(int i = 0; i < 20; i++){
+    waitingUsers = (UserData*)malloc(sizeof(UserData) * 5);
+	for(int i = 0; i < 5; i++){
 		waitingUsers[i] = UserData();
 		waitingUsers[i].isConnected = false;
 	}
@@ -26,7 +26,7 @@ MainServer :: MainServer (unsigned short int port){
     //prepara as salas
     rooms = (ChatRoom*)malloc(sizeof(UserData) * 20);
     for (size_t i = 0; i < 20; i++)
-    {
+    {   
         rooms[i] = ChatRoom();
         rooms[i].userNum = -1;
     }
@@ -90,6 +90,11 @@ void MainServer :: acceptC(){
 		return ;
     }
 
+    if(tempUser != -1)//user waiting
+    {
+        return;
+    }
+
 	struct pollfd fds[1];
 	fds[0].fd = sockfd;
 	fds[0].events = 0;
@@ -113,10 +118,9 @@ void MainServer :: acceptC(){
         char ipStr[50];
         inet_ntop(AF_INET, (struct sockaddr*)&client.sin_addr, ipStr, 50);
 
-        UserData newUser(newConnectionSocket);
-        strcpy(newUser.userIp,ipStr);
-        
-        setUserToWaiting(newUser, newConnectionSocket);
+        strcpy(tempIp,ipStr);
+
+        tempUser= newConnectionSocket;
     }
 }
 
@@ -201,14 +205,16 @@ void MainServer :: listenUser(int id, int sock){
 
                         roomId = newRoom(roomName);
                         if(roomId != -1){
+                            
                             std::cout << "\n\rSERVER_LOG: um usuario esta criou a sala "<< rooms[roomId].roomName << std::endl;
                             //adiciona o usuario na sala
                             UserData user = waitingUsers[id];
 
                             //remove o usuario da fila de espera
                             removeWaitingUser(id);
-
-                            rooms[roomId].addUserFromServer(user, sock);
+                            rooms[roomId].users[0] = user;
+                            rooms[roomId].listenUser(0,sock);
+                            //rooms[roomId].addUserFromServer(user, sock);
                             break;
                         }
                     }
@@ -328,4 +334,19 @@ void MainServer :: closeServer(){
         chatNum = -1;
         close(sockfd);
     }
+}
+
+void MainServer :: startUser(){
+
+    if(tempUser != -1){
+        UserData newUser(tempUser);
+        int sock = tempUser;
+        strcpy(newUser.userIp,tempIp);
+//        printf("\nIP: %s\n", newUser.userIp);
+        strcpy(tempIp, "");
+        tempUser = -1;
+        waitingUserNum++;
+        setUserToWaiting(newUser,sock);
+    }
+
 }
