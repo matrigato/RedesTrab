@@ -32,7 +32,7 @@ class MainServer{
         void startUser();
         bool isOpen;
         int tempUser = -1;
-        ChatRoom * rooms;
+        ChatRoom rooms[5];
     private:
         int sockfd;
         UserData * waitingUsers;

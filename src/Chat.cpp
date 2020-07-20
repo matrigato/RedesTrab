@@ -200,7 +200,7 @@ void ChatRoom :: addUserFromServer(UserData newUser, int sock){
 		int pos;
 		for(int i = 0; i < 20; i++){
 			if(!(&users[i])->isConnected){
-				users[i] = newUser;
+				(users[i]) = newUser;
 				userNum++;
 				pos = i;
 			}
@@ -643,7 +643,6 @@ void UserData::operator =(const UserData &x){
 	for(int i = 0; i < 50; i++){
 		userName[i] = x.userName[i];
 	}
-	//strcpy(userName,x.userName);
 	strcpy(userIp, x.userIp);
 	hasError = x.hasError;
 	isConnected = x.isConnected;
