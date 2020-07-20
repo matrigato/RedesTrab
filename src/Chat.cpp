@@ -619,6 +619,7 @@ UserData::UserData(const UserData &x){
 	hasError = x.hasError;
 	isConnected = x.isConnected;
 	connectedSocket = x.connectedSocket;
+	canTalk = x.canTalk;
 }
 
 //send a message and if necessary resend it;
@@ -647,6 +648,7 @@ void UserData::operator =(const UserData &x){
 	hasError = x.hasError;
 	isConnected = x.isConnected;
 	connectedSocket = x.connectedSocket;
+	canTalk = x.canTalk;
 }
 
 void ChatRoom :: operator =(const ChatRoom &x){
