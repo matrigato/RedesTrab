@@ -251,7 +251,7 @@ void MainServer :: listenUser(int id, int sock){
                         }
                     }
                     else{
-                        waitingUsers[id].sendNewM(buffer,4096);
+                        waitingUsers[id].sendNewM(buffer,4096); // Mensagem sobre caracteres invalidos
                     }
 
                     strcpy(buffer, "\n\rSERVER_LOG: ERRO; não foi possivel se connectar/criar a sala desejada, tente novamente.");

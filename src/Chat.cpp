@@ -295,7 +295,19 @@ void ChatRoom :: listenUser(int id, int socket){
 	struct pollfd fds[1];
 	fds[0].fd = socket;
 	fds[0].events = 0;
-	fds[0].events |= POLLIN; 
+	fds[0].events |= POLLIN;
+	bool nameAllowed = true;
+
+	for(int i = 0; i < 20; i++){
+		if(i == id) continue;
+
+		if(users[i].isConnected && (strcmp(users[i].userName, users[id].userName) == 0)){
+			nameAllowed = false;
+			strcpy(buffer, "SERVER: Há outro user com o mesmo nickname neste canal.\nUse /nickname NAME para mudar o seu antes de poder enviar mensagens.");
+			users[id].sendNewM(buffer, 4096);
+			break;
+		}
+	}
 
 	while(true){
 		if(poll(fds,1,3000) != 0){
@@ -318,6 +330,24 @@ void ChatRoom :: listenUser(int id, int socket){
 			else if(buffer[0] == '/'){ //um comando esta sendo chamado
 				
 				commands(buffer, id);
+
+				if(!nameAllowed){
+					nameAllowed = true;
+					for(int i = 0; i < 20; i++){
+						if(i == id) continue;
+
+						if(users[i].isConnected && (strcmp(users[i].userName, users[id].userName) == 0)){
+							nameAllowed = false;
+							strcpy(buffer, "SERVER: Há outro user com o mesmo nickname neste canal.\nUse /nickname NAME para mudar o seu antes de poder enviar mensagens.");
+							users[id].sendNewM(buffer, 4096);
+							break;
+						}
+					}
+				}
+			}
+			else if(!nameAllowed){
+				strcpy(buffer, "SERVER: Há outro user com o mesmo nickname neste canal.\nUse /nickname NOME para mudar o seu antes de poder enviar mensagens.");
+				users[id].sendNewM(buffer, 4096);
 			}
 			else{
 				std:: cout << "\n\rSERVER_LOG: ERRNO_SEND: " << errno << std:: endl;
@@ -364,26 +394,45 @@ void ChatRoom :: commands(char * buffer, int id){
 		//change the user nick name
 		std:: cout << "\n\rSERVER_LOG: Change Nickname request de " << users[id].userName << std::endl;
 
+		char tmpName[50];
+		bool nameAllowed = true;
+
 		//verify if there is a name
 		if(strlen(buffer) >  10){
-				//change name
-				int size = strlen(buffer) - 10;
+			//change name
+			int size = strlen(buffer) - 10;
 			if(size > 50)
 				size = 50;
 
-			for(int i = 0; i < size; i++)
-				users[id].userName[i] = buffer[i + 10];
-			users[id].userName[size] = '\0';
-			
-			strcpy(buffer, "\n\rSERVER_LOG: Sucesso no processo de alterar o nome do usuario.");
-			//user feedback	
-			users[id].sendNewM(buffer,4096);
+			for(int i = 0; i < size; i++){
+				tmpName[i] = buffer[i + 10];
+				if(!((tmpName[i] >= 'a' && tmpName[i] <= 'z') || (tmpName[i] >= 'A' && tmpName[i] <= 'Z'))){
+					nameAllowed = false;
+					break;
+				}
+			}
+
+			if(size == 50){
+				tmpName[49] = '\0';
+			}else{
+				tmpName[size] = '\0';
+			}
+
+			if(!nameAllowed){
+				strcpy(buffer, "\n\rSERVER_LOG: Erro no processo de alterar o nome do usuario:\nApenas caracteres 'a' ... 'z' | 'A' ... 'Z' são permitidos.");
+			}
+			else if(getUserByName(tmpName) != -1){
+				strcpy(buffer, "\n\rSERVER_LOG: Erro no processo de alterar o nome do usuario: Este nome já existe.");
+			}
+			else{
+				strcpy(users[id].userName, tmpName);
+				strcpy(buffer, "\n\rSERVER_LOG: Sucesso no processo de alterar o nome do usuario.");
+			}
+
 		}
-		else{
-			
-			//user feedback	
+
+		//user feedback	
 			users[id].sendNewM(buffer,4096);
-		}
 	}
 	else if(strncmp(buffer,"/kick ",6) == 0){
 		

@@ -66,11 +66,24 @@ void server_rotine(){
 
 void client_rotine(){
 	//recives user name
-	std::cout << "User Name: ";
+	bool allowed;
 	char userName[50];
-	bzero(userName,50);
-	std::cin >> userName;
-	std::cin.ignore();
+	do{
+		allowed = true;
+		std::cout << "User Name: ";
+		bzero(userName,50);
+		std::cin >> userName;
+		std::cin.ignore();
+		userName[49] = '\0';
+
+		for(int i = 0; userName[i] != '\0'; i++){
+			if(!((userName[i] >= 'a' && userName[i] <= 'z') || (userName[i] >= 'A' && userName[i] <= 'Z'))){
+				std::cout << "Apenas caracteres 'a' ... 'z' | 'A' ... 'Z' são permitidos. Digite novamente." << std::endl;
+				allowed = false;
+				break;
+			}
+		}
+	}while(!allowed);
 
 	//recives server name
 	std::cout << "Server Name: ";
